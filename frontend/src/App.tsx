@@ -7,13 +7,13 @@ import TagTree from './components/TagTree';
 import SearchBar from './components/SearchBar';
 
 function App() {
-  const [selectedRecipeId, setSelectedRecipeId] = useState(null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
 
-  const handleRecipeClick = (recipeId) => {
+  const handleRecipeClick = (recipeId: number): void => {
     setSelectedRecipeId(recipeId);
   };
 
-  const handleBackToList = () => {
+  const handleBackToList = (): void => {
     setSelectedRecipeId(null);
   };
 

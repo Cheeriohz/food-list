@@ -1,7 +1,14 @@
 import React from 'react';
 import { useTags } from '../contexts/TagContext';
+import { Tag } from '../types';
 
-const TagNode = ({ tag, selectedTags, onToggleTag }) => {
+interface TagNodeProps {
+  tag: Tag;
+  selectedTags: string[];
+  onToggleTag: (tagName: string) => void;
+}
+
+const TagNode = ({ tag, selectedTags, onToggleTag }: TagNodeProps) => {
   const isSelected = selectedTags.includes(tag.name);
   
   return (
@@ -29,7 +36,15 @@ const TagNode = ({ tag, selectedTags, onToggleTag }) => {
 };
 
 const TagTree = () => {
-  const { tags, selectedTags, toggleTagSelection } = useTags();
+  const { tags, selectedTags, selectTag, deselectTag } = useTags();
+
+  const handleToggleTag = (tagName: string): void => {
+    if (selectedTags.includes(tagName)) {
+      deselectTag(tagName);
+    } else {
+      selectTag(tagName);
+    }
+  };
 
   return (
     <div className="tag-tree">
@@ -40,7 +55,7 @@ const TagTree = () => {
             key={tag.id}
             tag={tag}
             selectedTags={selectedTags}
-            onToggleTag={toggleTagSelection}
+            onToggleTag={handleToggleTag}
           />
         ))}
       </ul>

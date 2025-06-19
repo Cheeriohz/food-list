@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { useRecipes } from '../contexts/RecipeContext';
 import { useTags } from '../contexts/TagContext';
 
 const SearchBar = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState<string>('');
   const { searchRecipes } = useRecipes();
   const { selectedTags, clearSelectedTags } = useTags();
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     searchRecipes(query, selectedTags);
   };
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     setQuery('');
     clearSelectedTags();
     searchRecipes('', []);

@@ -1,15 +1,32 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { Recipe, RecipeContextType } from '../types';
 
-const RecipeContext = createContext();
+const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 
-const initialState = {
+interface RecipeState {
+  recipes: Recipe[];
+  currentRecipe: Recipe | null;
+  loading: boolean;
+  error: string | null;
+}
+
+type RecipeAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'SET_RECIPES'; payload: Recipe[] }
+  | { type: 'SET_CURRENT_RECIPE'; payload: Recipe }
+  | { type: 'ADD_RECIPE'; payload: Recipe }
+  | { type: 'UPDATE_RECIPE'; payload: Recipe }
+  | { type: 'DELETE_RECIPE'; payload: number };
+
+const initialState: RecipeState = {
   recipes: [],
   currentRecipe: null,
   loading: false,
   error: null
 };
 
-const recipeReducer = (state, action) => {
+const recipeReducer = (state: RecipeState, action: RecipeAction): RecipeState => {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
@@ -40,34 +57,38 @@ const recipeReducer = (state, action) => {
   }
 };
 
-export const RecipeProvider = ({ children }) => {
+interface RecipeProviderProps {
+  children: ReactNode;
+}
+
+export const RecipeProvider = ({ children }: RecipeProviderProps) => {
   const [state, dispatch] = useReducer(recipeReducer, initialState);
 
-  const fetchRecipes = async () => {
+  const fetchRecipes = async (): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch('/api/recipes');
       if (!response.ok) throw new Error('Failed to fetch recipes');
-      const recipes = await response.json();
+      const recipes: Recipe[] = await response.json();
       dispatch({ type: 'SET_RECIPES', payload: recipes });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   };
 
-  const fetchRecipe = async (id) => {
+  const fetchRecipe = async (id: number): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch(`/api/recipes/${id}`);
       if (!response.ok) throw new Error('Failed to fetch recipe');
-      const recipe = await response.json();
+      const recipe: Recipe = await response.json();
       dispatch({ type: 'SET_CURRENT_RECIPE', payload: recipe });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   };
 
-  const createRecipe = async (recipeData) => {
+  const createRecipe = async (recipeData: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch('/api/recipes', {
@@ -78,11 +99,11 @@ export const RecipeProvider = ({ children }) => {
       if (!response.ok) throw new Error('Failed to create recipe');
       await fetchRecipes();
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   };
 
-  const updateRecipe = async (id, recipeData) => {
+  const updateRecipe = async (id: number, recipeData: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch(`/api/recipes/${id}`, {
@@ -91,14 +112,14 @@ export const RecipeProvider = ({ children }) => {
         body: JSON.stringify(recipeData)
       });
       if (!response.ok) throw new Error('Failed to update recipe');
-      const updatedRecipe = await response.json();
+      const updatedRecipe: Recipe = await response.json();
       dispatch({ type: 'UPDATE_RECIPE', payload: updatedRecipe });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   };
 
-  const deleteRecipe = async (id) => {
+  const deleteRecipe = async (id: number): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch(`/api/recipes/${id}`, {
@@ -107,11 +128,11 @@ export const RecipeProvider = ({ children }) => {
       if (!response.ok) throw new Error('Failed to delete recipe');
       dispatch({ type: 'DELETE_RECIPE', payload: id });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   };
 
-  const searchRecipes = async (query, tags = []) => {
+  const searchRecipes = async (query: string, tags: string[] = []): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const params = new URLSearchParams();
@@ -120,10 +141,10 @@ export const RecipeProvider = ({ children }) => {
       
       const response = await fetch(`/api/search?${params}`);
       if (!response.ok) throw new Error('Failed to search recipes');
-      const recipes = await response.json();
+      const recipes: Recipe[] = await response.json();
       dispatch({ type: 'SET_RECIPES', payload: recipes });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   };
 
@@ -131,7 +152,7 @@ export const RecipeProvider = ({ children }) => {
     fetchRecipes();
   }, []);
 
-  const value = {
+  const value: RecipeContextType = {
     ...state,
     fetchRecipes,
     fetchRecipe,
@@ -148,7 +169,7 @@ export const RecipeProvider = ({ children }) => {
   );
 };
 
-export const useRecipes = () => {
+export const useRecipes = (): RecipeContextType => {
   const context = useContext(RecipeContext);
   if (!context) {
     throw new Error('useRecipes must be used within a RecipeProvider');

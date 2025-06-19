@@ -1,9 +1,15 @@
 import React from 'react';
 import { useRecipes } from '../contexts/RecipeContext';
+import { Recipe } from '../types';
 
-const RecipeCard = ({ recipe, onRecipeClick }) => {
+interface RecipeCardProps {
+  recipe: Recipe;
+  onRecipeClick: (id: number) => void;
+}
+
+const RecipeCard = ({ recipe, onRecipeClick }: RecipeCardProps) => {
   return (
-    <div className="recipe-card" onClick={() => onRecipeClick(recipe.id)}>
+    <div className="recipe-card" onClick={() => onRecipeClick(recipe.id!)}>
       <h3>{recipe.title}</h3>
       <p>{recipe.description}</p>
       <div className="recipe-meta">
@@ -20,7 +26,11 @@ const RecipeCard = ({ recipe, onRecipeClick }) => {
   );
 };
 
-const RecipeList = ({ onRecipeClick }) => {
+interface RecipeListProps {
+  onRecipeClick: (id: number) => void;
+}
+
+const RecipeList = ({ onRecipeClick }: RecipeListProps) => {
   const { recipes, loading, error } = useRecipes();
 
   if (loading) return <div>Loading recipes...</div>;

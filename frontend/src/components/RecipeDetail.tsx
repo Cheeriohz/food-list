@@ -1,14 +1,19 @@
 import React, { useEffect } from 'react';
 import { useRecipes } from '../contexts/RecipeContext';
 
-const RecipeDetail = ({ recipeId, onBack }) => {
+interface RecipeDetailProps {
+  recipeId: number;
+  onBack: () => void;
+}
+
+const RecipeDetail = ({ recipeId, onBack }: RecipeDetailProps) => {
   const { currentRecipe, fetchRecipe, loading, error } = useRecipes();
 
   useEffect(() => {
     if (recipeId) {
       fetchRecipe(recipeId);
     }
-  }, [recipeId]);
+  }, [recipeId, fetchRecipe]);
 
   if (loading) return <div>Loading recipe...</div>;
   if (error) return <div>Error: {error}</div>;
