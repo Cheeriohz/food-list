@@ -10,7 +10,18 @@
       "Bash(npx react-scripts:*)",
       "Bash(ls:*)",
       "Bash(curl:*)",
-      "Bash(ss:*)"
+      "Bash(ss:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout 5s npm run dev)",
+      "Bash(rm:*)",
+      "Bash(timeout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cat:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
