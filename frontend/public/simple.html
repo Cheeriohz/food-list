@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe App - Simple Version</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .recipe-card { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .tags { margin-top: 10px; }
+        .tag { background: #007bff; color: white; padding: 2px 8px; margin: 2px; border-radius: 3px; display: inline-block; font-size: 12px; }
+        .search-bar { margin-bottom: 20px; }
+        input { padding: 8px; width: 300px; }
+        button { padding: 8px 15px; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Recipe Management App</h1>
+    
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search recipes...">
+        <button onclick="searchRecipes()">Search</button>
+        <button onclick="loadAllRecipes()">Show All</button>
+    </div>
+    
+    <div id="recipes"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        
+        async function loadAllRecipes() {
+            try {
+                const response = await fetch(`${API_BASE}/recipes`);
+                const recipes = await response.json();
+                displayRecipes(recipes);
+            } catch (error) {
+                document.getElementById('recipes').innerHTML = '<p>Error loading recipes. Make sure backend is running on port 3001.</p>';
+            }
+        }
+        
+        async function searchRecipes() {
+            const query = document.getElementById('searchInput').value;
+            try {
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                const recipes = await response.json();
+                displayRecipes(recipes);
+            } catch (error) {
+                document.getElementById('recipes').innerHTML = '<p>Error searching recipes.</p>';
+            }
+        }
+        
+        function displayRecipes(recipes) {
+            const container = document.getElementById('recipes');
+            
+            if (recipes.length === 0) {
+                container.innerHTML = '<p>No recipes found.</p>';
+                return;
+            }
+            
+            container.innerHTML = recipes.map(recipe => `
+                <div class="recipe-card">
+                    <h3>${recipe.title}</h3>
+                    <p>${recipe.description || ''}</p>
+                    <p><strong>Prep:</strong> ${recipe.prep_time}min | <strong>Cook:</strong> ${recipe.cook_time}min | <strong>Servings:</strong> ${recipe.servings}</p>
+                    <div class="tags">
+                        ${recipe.tags ? recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Load recipes on page load
+        loadAllRecipes();
+    </script>
+</body>
+</html>

@@ -11,6 +11,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd backend && npm run dev` - Run only the backend server (port 3001) in TypeScript mode
 - `cd frontend && npm start` - Run only the frontend development server (port 3000)
 
+### Alternative Frontend Startup Methods (if main startup fails)
+- `cd frontend && npm run start:simple` - Quick HTML version with Python server
+- `cd frontend && npm run start:node` - Simple Node.js server (no dependencies)
+- `cd frontend && npm run start:npx` - Use npx to bypass local binary issues
+- Open `frontend/public/simple.html` in browser (static version)
+
 ### Backend TypeScript Commands
 - `cd backend && npm run build` - Compile TypeScript to JavaScript in `dist/` folder
 - `cd backend && npm run dev` - Run TypeScript backend with ts-node (memory database)

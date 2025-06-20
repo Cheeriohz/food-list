@@ -10,7 +10,7 @@ let recipes: Recipe[] = [
     prep_time: 15,
     cook_time: 20,
     servings: 4,
-    tags: ['Italian', 'Dinner'],
+    tags: ['Dinner', 'Medium Effort', 'Comfort Food', 'Weeknight'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   },
@@ -23,51 +23,100 @@ let recipes: Recipe[] = [
     prep_time: 10,
     cook_time: 10,
     servings: 1,
-    tags: ['Breakfast', 'Vegetarian'],
+    tags: ['Breakfast', 'Quick & Easy', 'Healthy', 'Vegetarian'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   },
   {
     id: 3,
     title: 'Chicken Tacos',
-    description: 'Flavorful Mexican-style chicken tacos with fresh toppings',
+    description: 'Flavorful chicken tacos with fresh toppings',
     ingredients: '1 lb chicken breast\n8 corn tortillas\n1 onion, diced\n2 tomatoes, diced\n1 avocado, sliced\n1/2 cup cilantro\n2 limes\nCumin, chili powder, paprika\nSalt and pepper',
     instructions: '1. Season chicken with spices\n2. Grill or pan-fry chicken until cooked through\n3. Slice chicken into strips\n4. Warm tortillas\n5. Assemble tacos with chicken and toppings\n6. Serve with lime wedges',
     prep_time: 20,
     cook_time: 15,
     servings: 4,
-    tags: ['Mexican', 'Dinner'],
+    tags: ['Dinner', 'Medium Effort', 'Weeknight'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   },
   {
     id: 4,
     title: 'Tofu Stir Fry',
-    description: 'Quick and healthy Asian-inspired stir fry with tofu and vegetables',
+    description: 'Quick and healthy stir fry with tofu and vegetables',
     ingredients: '200g firm tofu\n2 cups mixed vegetables (broccoli, bell peppers, carrots)\n2 cloves garlic\n1 inch ginger\n3 tbsp soy sauce\n1 tbsp sesame oil\n1 tsp cornstarch\nGreen onions for garnish',
     instructions: '1. Press and cube tofu\n2. Heat oil in wok or large pan\n3. Fry tofu until golden\n4. Add vegetables and stir-fry\n5. Mix sauce ingredients\n6. Toss everything with sauce\n7. Garnish with green onions',
     prep_time: 15,
     cook_time: 10,
     servings: 2,
-    tags: ['Asian', 'Vegetarian', 'Dinner'],
+    tags: ['Dinner', 'Quick & Easy', 'Healthy', 'Vegetarian', 'Weeknight'],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 5,
+    title: 'Overnight Oats',
+    description: 'Make-ahead breakfast with oats, milk, and toppings',
+    ingredients: '1/2 cup rolled oats\n1/2 cup milk\n1 tbsp chia seeds\n1 tbsp maple syrup\n1/2 cup berries\n2 tbsp nuts\nVanilla extract',
+    instructions: '1. Mix oats, milk, chia seeds, and maple syrup\n2. Add vanilla extract\n3. Refrigerate overnight\n4. Top with berries and nuts before serving',
+    prep_time: 5,
+    cook_time: 0,
+    servings: 1,
+    tags: ['Breakfast', 'Prep Ahead', 'Healthy', 'Quick & Easy'],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 6,
+    title: 'Beef Wellington',
+    description: 'Elegant beef tenderloin wrapped in puff pastry',
+    ingredients: '2 lb beef tenderloin\n1 lb puff pastry\n8 oz mushrooms\n4 oz pâté\n2 egg yolks\nFresh herbs\nSalt and pepper',
+    instructions: '1. Sear beef on all sides\n2. Prepare mushroom duxelles\n3. Wrap beef with pâté and mushrooms in pastry\n4. Brush with egg wash\n5. Bake until pastry is golden\n6. Rest before slicing',
+    prep_time: 45,
+    cook_time: 35,
+    servings: 6,
+    tags: ['Dinner', 'High Effort', 'Special Occasion', 'Weekend'],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 7,
+    title: 'Microwave Mug Cake',
+    description: 'Quick chocolate cake made in a mug',
+    ingredients: '4 tbsp flour\n4 tbsp sugar\n2 tbsp cocoa powder\n1/4 tsp baking powder\n3 tbsp milk\n2 tbsp oil\nPinch of salt',
+    instructions: '1. Mix dry ingredients in mug\n2. Add wet ingredients and stir\n3. Microwave for 90 seconds\n4. Let cool slightly before eating',
+    prep_time: 2,
+    cook_time: 2,
+    servings: 1,
+    tags: ['Snack', 'Quick & Easy', 'Late Night'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
 ];
 
 const tags: Tag[] = [
-  { id: 1, name: 'Cuisine', parent_tag_id: null },
-  { id: 2, name: 'Italian', parent_tag_id: 1 },
-  { id: 3, name: 'Mexican', parent_tag_id: 1 },
-  { id: 4, name: 'Asian', parent_tag_id: 1 },
-  { id: 5, name: 'Meal Type', parent_tag_id: null },
-  { id: 6, name: 'Breakfast', parent_tag_id: 5 },
-  { id: 7, name: 'Lunch', parent_tag_id: 5 },
-  { id: 8, name: 'Dinner', parent_tag_id: 5 },
-  { id: 9, name: 'Dietary', parent_tag_id: null },
-  { id: 10, name: 'Vegetarian', parent_tag_id: 9 },
-  { id: 11, name: 'Vegan', parent_tag_id: 9 },
-  { id: 12, name: 'Gluten-Free', parent_tag_id: 9 }
+  { id: 1, name: 'Meal Time', parent_tag_id: null },
+  { id: 2, name: 'Breakfast', parent_tag_id: 1 },
+  { id: 3, name: 'Lunch', parent_tag_id: 1 },
+  { id: 4, name: 'Dinner', parent_tag_id: 1 },
+  { id: 5, name: 'Snack', parent_tag_id: 1 },
+  { id: 6, name: 'Late Night', parent_tag_id: 1 },
+  { id: 7, name: 'Effort Level', parent_tag_id: null },
+  { id: 8, name: 'Quick & Easy', parent_tag_id: 7 },
+  { id: 9, name: 'Medium Effort', parent_tag_id: 7 },
+  { id: 10, name: 'High Effort', parent_tag_id: 7 },
+  { id: 11, name: 'Prep Ahead', parent_tag_id: 7 },
+  { id: 12, name: 'Occasion', parent_tag_id: null },
+  { id: 13, name: 'Weeknight', parent_tag_id: 12 },
+  { id: 14, name: 'Weekend', parent_tag_id: 12 },
+  { id: 15, name: 'Special Occasion', parent_tag_id: 12 },
+  { id: 16, name: 'Comfort Food', parent_tag_id: 12 },
+  { id: 17, name: 'Healthy', parent_tag_id: 12 },
+  { id: 18, name: 'Dietary', parent_tag_id: null },
+  { id: 19, name: 'Vegetarian', parent_tag_id: 18 },
+  { id: 20, name: 'Vegan', parent_tag_id: 18 },
+  { id: 21, name: 'Gluten-Free', parent_tag_id: 18 },
+  { id: 22, name: 'Low Carb', parent_tag_id: 18 }
 ];
 
 const buildTagTree = (tags: Tag[], parentId: number | null = null): Tag[] => {
@@ -79,8 +128,8 @@ const buildTagTree = (tags: Tag[], parentId: number | null = null): Tag[] => {
     }));
 };
 
-let nextRecipeId = 5;
-let nextTagId = 13;
+let nextRecipeId = 8;
+let nextTagId = 23;
 
 export const getAllRecipes = (): Recipe[] => recipes;
 

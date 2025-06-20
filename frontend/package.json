@@ -9,6 +9,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "start:simple": "python3 -m http.server 3000 --directory public",
+    "start:node": "node -e \"const http=require('http'),fs=require('fs'),path=require('path');http.createServer((req,res)=>{const file=req.url==='/'?'/simple.html':req.url;const filePath=path.join(__dirname,'public',file);fs.readFile(filePath,(err,data)=>{if(err){res.writeHead(404);res.end('Not found');return;}const ext=path.extname(file);const contentType={'html':'text/html','js':'text/javascript','css':'text/css'}[ext.slice(1)]||'text/plain';res.writeHead(200,{'Content-Type':contentType,'Access-Control-Allow-Origin':'*'});res.end(data);})}).listen(3000,()=>console.log('Simple server running on http://localhost:3000'));\"",
+    "start:npx": "npx react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

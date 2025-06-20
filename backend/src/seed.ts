@@ -10,30 +10,49 @@ const seedData = async (): Promise<void> => {
     await initializeDatabase();
     
     const tags = [
-      'Cuisine',
-      'Italian',
-      'Mexican',
-      'Asian',
-      'Meal Type',
+      'Meal Time',
       'Breakfast',
       'Lunch',
       'Dinner',
+      'Snack',
+      'Late Night',
+      'Effort Level',
+      'Quick & Easy',
+      'Medium Effort',
+      'High Effort',
+      'Prep Ahead',
+      'Occasion',
+      'Weeknight',
+      'Weekend',
+      'Special Occasion',
+      'Comfort Food',
+      'Healthy',
       'Dietary',
       'Vegetarian',
       'Vegan',
-      'Gluten-Free'
+      'Gluten-Free',
+      'Low Carb'
     ];
     
     const tagHierarchy: Record<string, string> = {
-      'Italian': 'Cuisine',
-      'Mexican': 'Cuisine',
-      'Asian': 'Cuisine',
-      'Breakfast': 'Meal Type',
-      'Lunch': 'Meal Type',
-      'Dinner': 'Meal Type',
+      'Breakfast': 'Meal Time',
+      'Lunch': 'Meal Time',
+      'Dinner': 'Meal Time',
+      'Snack': 'Meal Time',
+      'Late Night': 'Meal Time',
+      'Quick & Easy': 'Effort Level',
+      'Medium Effort': 'Effort Level',
+      'High Effort': 'Effort Level',
+      'Prep Ahead': 'Effort Level',
+      'Weeknight': 'Occasion',
+      'Weekend': 'Occasion',
+      'Special Occasion': 'Occasion',
+      'Comfort Food': 'Occasion',
+      'Healthy': 'Occasion',
       'Vegetarian': 'Dietary',
       'Vegan': 'Dietary',
-      'Gluten-Free': 'Dietary'
+      'Gluten-Free': 'Dietary',
+      'Low Carb': 'Dietary'
     };
     
     const tagIds: Record<string, number> = {};
@@ -66,7 +85,7 @@ const seedData = async (): Promise<void> => {
         prep_time: 15,
         cook_time: 20,
         servings: 4,
-        tags: ['Italian', 'Dinner']
+        tags: ['Dinner', 'Medium Effort', 'Comfort Food', 'Weeknight']
       },
       {
         title: 'Veggie Breakfast Bowl',
@@ -76,27 +95,57 @@ const seedData = async (): Promise<void> => {
         prep_time: 10,
         cook_time: 10,
         servings: 1,
-        tags: ['Breakfast', 'Vegetarian']
+        tags: ['Breakfast', 'Quick & Easy', 'Healthy', 'Vegetarian']
       },
       {
         title: 'Chicken Tacos',
-        description: 'Flavorful Mexican-style chicken tacos with fresh toppings',
+        description: 'Flavorful chicken tacos with fresh toppings',
         ingredients: '1 lb chicken breast\n8 corn tortillas\n1 onion, diced\n2 tomatoes, diced\n1 avocado, sliced\n1/2 cup cilantro\n2 limes\nCumin, chili powder, paprika\nSalt and pepper',
         instructions: '1. Season chicken with spices\n2. Grill or pan-fry chicken until cooked through\n3. Slice chicken into strips\n4. Warm tortillas\n5. Assemble tacos with chicken and toppings\n6. Serve with lime wedges',
         prep_time: 20,
         cook_time: 15,
         servings: 4,
-        tags: ['Mexican', 'Dinner']
+        tags: ['Dinner', 'Medium Effort', 'Weeknight']
       },
       {
         title: 'Tofu Stir Fry',
-        description: 'Quick and healthy Asian-inspired stir fry with tofu and vegetables',
+        description: 'Quick and healthy stir fry with tofu and vegetables',
         ingredients: '200g firm tofu\n2 cups mixed vegetables (broccoli, bell peppers, carrots)\n2 cloves garlic\n1 inch ginger\n3 tbsp soy sauce\n1 tbsp sesame oil\n1 tsp cornstarch\nGreen onions for garnish',
         instructions: '1. Press and cube tofu\n2. Heat oil in wok or large pan\n3. Fry tofu until golden\n4. Add vegetables and stir-fry\n5. Mix sauce ingredients\n6. Toss everything with sauce\n7. Garnish with green onions',
         prep_time: 15,
         cook_time: 10,
         servings: 2,
-        tags: ['Asian', 'Vegetarian', 'Dinner']
+        tags: ['Dinner', 'Quick & Easy', 'Healthy', 'Vegetarian', 'Weeknight']
+      },
+      {
+        title: 'Overnight Oats',
+        description: 'Make-ahead breakfast with oats, milk, and toppings',
+        ingredients: '1/2 cup rolled oats\n1/2 cup milk\n1 tbsp chia seeds\n1 tbsp maple syrup\n1/2 cup berries\n2 tbsp nuts\nVanilla extract',
+        instructions: '1. Mix oats, milk, chia seeds, and maple syrup\n2. Add vanilla extract\n3. Refrigerate overnight\n4. Top with berries and nuts before serving',
+        prep_time: 5,
+        cook_time: 0,
+        servings: 1,
+        tags: ['Breakfast', 'Prep Ahead', 'Healthy', 'Quick & Easy']
+      },
+      {
+        title: 'Beef Wellington',
+        description: 'Elegant beef tenderloin wrapped in puff pastry',
+        ingredients: '2 lb beef tenderloin\n1 lb puff pastry\n8 oz mushrooms\n4 oz pâté\n2 egg yolks\nFresh herbs\nSalt and pepper',
+        instructions: '1. Sear beef on all sides\n2. Prepare mushroom duxelles\n3. Wrap beef with pâté and mushrooms in pastry\n4. Brush with egg wash\n5. Bake until pastry is golden\n6. Rest before slicing',
+        prep_time: 45,
+        cook_time: 35,
+        servings: 6,
+        tags: ['Dinner', 'High Effort', 'Special Occasion', 'Weekend']
+      },
+      {
+        title: 'Microwave Mug Cake',
+        description: 'Quick chocolate cake made in a mug',
+        ingredients: '4 tbsp flour\n4 tbsp sugar\n2 tbsp cocoa powder\n1/4 tsp baking powder\n3 tbsp milk\n2 tbsp oil\nPinch of salt',
+        instructions: '1. Mix dry ingredients in mug\n2. Add wet ingredients and stir\n3. Microwave for 90 seconds\n4. Let cool slightly before eating',
+        prep_time: 2,
+        cook_time: 2,
+        servings: 1,
+        tags: ['Snack', 'Quick & Easy', 'Late Night']
       }
     ];
     
