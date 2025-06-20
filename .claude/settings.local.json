@@ -24,7 +24,8 @@
       "Bash(git push:*)",
       "Bash(pkill:*)",
       "Bash(npx ts-node:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:blog.jakoblind.no)"
     ],
     "deny": []
   }
