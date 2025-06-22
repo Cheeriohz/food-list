@@ -35,7 +35,9 @@
       "Bash(echo $PATH)",
       "Bash(claude mcp:*)",
       "Bash(npx:*)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "Bash(npm run seed:*)",
+      "Bash(fuser:*)"
     ],
     "deny": []
   }
