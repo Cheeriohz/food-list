@@ -103,6 +103,33 @@ export const TagProvider = ({ children }: TagProviderProps) => {
     dispatch({ type: 'CLEAR_SELECTED_TAGS' });
   };
 
+  const deleteTag = async (id: number): Promise<{ affectedRecipes: any[]; promotedChildren: any[] }> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const response = await fetch(`/api/tags/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete tag');
+      const result = await response.json();
+      await fetchTags();
+      return result.details;
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
+      throw error;
+    }
+  };
+
+  const getTagRecipes = async (id: number): Promise<any[]> => {
+    try {
+      const response = await fetch(`/api/tags/${id}/recipes`);
+      if (!response.ok) throw new Error('Failed to fetch tag recipes');
+      return await response.json();
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchTags();
   }, []);
@@ -111,6 +138,8 @@ export const TagProvider = ({ children }: TagProviderProps) => {
     ...state,
     fetchTags,
     createTag,
+    deleteTag,
+    getTagRecipes,
     selectTag,
     deselectTag,
     clearSelectedTags

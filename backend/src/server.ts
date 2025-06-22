@@ -243,6 +243,122 @@ app.post('/api/tags', (req: any, res: any) => {
   });
 });
 
+// Get recipes that use a specific tag (for impact assessment)
+app.get('/api/tags/:id/recipes', (req: any, res: any) => {
+  const tagId = parseInt(req.params.id);
+  
+  if (isNaN(tagId)) {
+    return res.status(400).json({ error: 'Invalid tag ID' });
+  }
+  
+  const query = `
+    SELECT r.id, r.title, r.description
+    FROM recipes r
+    JOIN recipe_tags rt ON r.id = rt.recipe_id
+    WHERE rt.tag_id = ?
+    ORDER BY r.title
+  `;
+  
+  db.all(query, [tagId], (err: Error | null, rows: any[]) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json(rows);
+  });
+});
+
+// Delete a tag and handle cascading effects
+app.delete('/api/tags/:id', (req: any, res: any) => {
+  const tagId = parseInt(req.params.id);
+  
+  if (isNaN(tagId)) {
+    return res.status(400).json({ error: 'Invalid tag ID' });
+  }
+  
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    
+    // Get affected recipes
+    db.all(
+      'SELECT r.id, r.title FROM recipes r JOIN recipe_tags rt ON r.id = rt.recipe_id WHERE rt.tag_id = ?',
+      [tagId],
+      (err: Error | null, affectedRecipes: any[]) => {
+        if (err) {
+          db.run('ROLLBACK');
+          return res.status(500).json({ error: err.message });
+        }
+        
+        // Get child tags that will be promoted
+        db.all(
+          'SELECT id, name FROM tags WHERE parent_tag_id = ?',
+          [tagId],
+          (err: Error | null, childTags: any[]) => {
+            if (err) {
+              db.run('ROLLBACK');
+              return res.status(500).json({ error: err.message });
+            }
+            
+            // Get the parent tag ID for promotion
+            db.get(
+              'SELECT parent_tag_id FROM tags WHERE id = ?',
+              [tagId],
+              (err: Error | null, parentTag: any) => {
+                if (err) {
+                  db.run('ROLLBACK');
+                  return res.status(500).json({ error: err.message });
+                }
+                
+                const newParentId = parentTag ? parentTag.parent_tag_id : null;
+                
+                // Update child tags to point to the deleted tag's parent
+                db.run(
+                  'UPDATE tags SET parent_tag_id = ? WHERE parent_tag_id = ?',
+                  [newParentId, tagId],
+                  (err: Error | null) => {
+                    if (err) {
+                      db.run('ROLLBACK');
+                      return res.status(500).json({ error: err.message });
+                    }
+                    
+                    // Delete the tag (CASCADE will handle recipe_tags)
+                    db.run(
+                      'DELETE FROM tags WHERE id = ?',
+                      [tagId],
+                      (err: Error | null) => {
+                        if (err) {
+                          db.run('ROLLBACK');
+                          return res.status(500).json({ error: err.message });
+                        }
+                        
+                        db.run('COMMIT', (err: Error | null) => {
+                          if (err) {
+                            return res.status(500).json({ error: err.message });
+                          }
+                          
+                          res.json({
+                            message: 'Tag deleted successfully',
+                            affectedRecipes: affectedRecipes.length,
+                            promotedChildren: childTags.length,
+                            details: {
+                              affectedRecipes,
+                              promotedChildren: childTags
+                            }
+                          });
+                        });
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+});
+
 app.get('/api/search', (req: Request<{}, {}, {}, SearchParams>, res: Response) => {
   const { q, tags } = req.query;
   let query = `

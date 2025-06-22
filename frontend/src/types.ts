@@ -40,6 +40,8 @@ export interface TagContextType {
   error: string | null;
   fetchTags: () => Promise<void>;
   createTag: (tag: Omit<Tag, 'id' | 'created_at'>) => Promise<void>;
+  deleteTag: (id: number) => Promise<{ affectedRecipes: any[]; promotedChildren: any[] }>;
+  getTagRecipes: (id: number) => Promise<any[]>;
   selectTag: (tagName: string) => void;
   deselectTag: (tagName: string) => void;
   clearSelectedTags: () => void;

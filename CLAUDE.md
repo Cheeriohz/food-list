@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` - Start both frontend and backend servers concurrently
 - `npm run build` - Build both frontend and backend TypeScript to production
 - `node start-app.ts` - Alternative TypeScript startup script (requires ts-node globally)
-- `cd backend && npm run dev` - Run only the backend server (port 3001) in TypeScript mode
+- `cd backend && npm run dev` - Run only the backend server (port 3001) with SQLite database
 - `cd frontend && npm start` - Run only the frontend development server (port 3000)
 
 ### Alternative Frontend Startup Methods (if main startup fails)
@@ -19,9 +19,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend TypeScript Commands
 - `cd backend && npm run build` - Compile TypeScript to JavaScript in `dist/` folder
-- `cd backend && npm run dev` - Run TypeScript backend with ts-node (memory database)
-- `cd backend && npm run dev:sqlite` - Run TypeScript backend with SQLite database
-- `cd backend && npm run seed` - Seed database with sample data (TypeScript)
+- `cd backend && npm run dev` - Run TypeScript backend with ts-node and SQLite database
+- `cd backend && npm run seed` - Seed SQLite database with sample data (TypeScript)
 - `cd backend && npm start` - Run compiled JavaScript from `dist/` folder
 
 ### Frontend TypeScript Commands
@@ -40,17 +39,15 @@ This is a full-stack recipe management application with hierarchical tag organiz
 
 ### Backend Architecture (`backend/src/`)
 - **Express.js API server** written in TypeScript on port 3001
-- **Two database options**:
-  - `memory-database.ts` - In-memory database with sample data (default)
-  - `database.ts` + `server.ts` - SQLite database with persistence
+- **SQLite database** with persistent storage and referential integrity
 - **Type definitions** in `types.ts` for Recipe, Tag, and API interfaces
-- **Main servers**:
-  - `simple-server.ts` - Uses memory database (default)
-  - `server.ts` - Uses SQLite database (requires sqlite3 installation)
-- **Database schema** (SQLite version):
+- **Main server**: `server.ts` - SQLite-based server with full CRUD operations
+- **Database schema**:
   - `recipes` - stores recipe data (title, ingredients, instructions, timing, etc.)
   - `tags` - hierarchical tag system with parent-child relationships
-  - `recipe_tags` - junction table linking recipes to tags
+  - `recipe_tags` - junction table linking recipes to tags with foreign key constraints
+- **Database initialization**: `database.ts` - schema creation and connection management
+- **Sample data**: `seed.ts` - populates database with example recipes and tag hierarchy
 
 ### Frontend Architecture (`frontend/src/`)
 - **React 18 application** written in TypeScript with Context API for state management
@@ -84,21 +81,23 @@ The application uses React Context with useReducer for state management. Both co
 - API calls wrapped in try-catch with loading states
 - Data fetched on context provider mount
 
-### Database Schema
-- **Hierarchical tags**: Tags can have parent_tag_id for tree structure
-- **Many-to-many**: Recipes linked to tags via junction table
+### Database Schema (SQLite)
+- **Hierarchical tags**: Tags can have parent_tag_id for tree structure with foreign key constraints
+- **Many-to-many**: Recipes linked to tags via junction table with CASCADE deletes
 - **Full recipe data**: Includes prep time, cook time, servings, timestamps
 - **Search optimization**: Recipes joined with tags for filtering and search
+- **Referential integrity**: Foreign key constraints ensure data consistency
+- **Transaction support**: ACID properties for complex operations
 
 ### Development Notes
 - **All code converted to TypeScript** with proper type definitions
 - **Compilation**: Backend compiles to `backend/dist/`, frontend handled by react-scripts
 - **Type safety**: Interfaces defined for all data structures and API responses
-- **Database flexibility**: Choose between memory database (default) or SQLite
+- **SQLite database**: Persistent storage with referential integrity and transaction support
 - **Frontend development server** proxies API calls to backend
-- **Sample data** available via TypeScript seed script
+- **Sample data** available via TypeScript seed script (`npm run seed`)
 - **CORS enabled** for local development
-- **Both servers** can run independently or concurrently
+- **Database initialization**: Automatic schema creation on first run
 
 ### TypeScript Configuration
 - **Backend**: Uses CommonJS modules, compiles to ES2020
