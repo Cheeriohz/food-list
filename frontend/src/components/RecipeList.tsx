@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRecipes } from '../contexts/RecipeContext';
 import { Recipe } from '../types';
+import TagChip from './TagChip';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -17,9 +18,19 @@ const RecipeCard = ({ recipe, onRecipeClick }: RecipeCardProps) => {
         {recipe.cook_time && <span>Cook: {recipe.cook_time}min</span>}
         {recipe.servings && <span>Serves: {recipe.servings}</span>}
       </div>
-      <div className="recipe-tags">
-        {recipe.tags && recipe.tags.map((tag, index) => (
-          <span key={index} className="tag">{tag}</span>
+      <div className="recipe-tags" style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '0.25rem', 
+        marginTop: '0.5rem' 
+      }}>
+        {recipe.tags && recipe.tags.map((tag) => (
+          <TagChip
+            key={tag.id}
+            tag={tag}
+            variant="normal"
+            size="small"
+          />
         ))}
       </div>
     </div>

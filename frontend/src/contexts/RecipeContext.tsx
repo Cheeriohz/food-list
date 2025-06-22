@@ -148,6 +148,24 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
     }
   };
 
+  const updateRecipeTags = async (recipeId: number, tagIds: number[]): Promise<void> => {
+    try {
+      const response = await fetch(`/api/recipes/${recipeId}/tags`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tagIds })
+      });
+      if (!response.ok) throw new Error('Failed to update recipe tags');
+      const updatedRecipe: Recipe = await response.json();
+      dispatch({ type: 'UPDATE_RECIPE', payload: updatedRecipe });
+      // Also refresh the recipes list to ensure consistency
+      await fetchRecipes();
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchRecipes();
   }, []);
@@ -159,7 +177,8 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
     createRecipe,
     updateRecipe,
     deleteRecipe,
-    searchRecipes
+    searchRecipes,
+    updateRecipeTags
   };
 
   return (

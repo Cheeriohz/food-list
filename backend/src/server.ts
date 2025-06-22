@@ -21,7 +21,10 @@ interface DbTagRow {
 
 app.get('/api/recipes', (req: Request, res: Response) => {
   const query = `
-    SELECT r.*, GROUP_CONCAT(t.name) as tags
+    SELECT r.*, 
+           JSON_GROUP_ARRAY(
+             JSON_OBJECT('id', t.id, 'name', t.name, 'parent_tag_id', t.parent_tag_id)
+           ) as tags
     FROM recipes r
     LEFT JOIN recipe_tags rt ON r.id = rt.recipe_id
     LEFT JOIN tags t ON rt.tag_id = t.id
@@ -29,14 +32,14 @@ app.get('/api/recipes', (req: Request, res: Response) => {
     ORDER BY r.created_at DESC
   `;
   
-  db.all(query, [], (err: Error | null, rows: DbRecipeRow[]) => {
+  db.all(query, [], (err: Error | null, rows: any[]) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
     
     const recipes: Recipe[] = rows.map(row => ({
       ...row,
-      tags: row.tags ? row.tags.split(',') : []
+      tags: row.tags ? JSON.parse(row.tags).filter((tag: any) => tag.id !== null) : []
     }));
     
     res.json(recipes);
@@ -46,7 +49,10 @@ app.get('/api/recipes', (req: Request, res: Response) => {
 app.get('/api/recipes/:id', (req: Request, res: Response) => {
   const { id } = req.params;
   const query = `
-    SELECT r.*, GROUP_CONCAT(t.name) as tags
+    SELECT r.*, 
+           JSON_GROUP_ARRAY(
+             JSON_OBJECT('id', t.id, 'name', t.name, 'parent_tag_id', t.parent_tag_id)
+           ) as tags
     FROM recipes r
     LEFT JOIN recipe_tags rt ON r.id = rt.recipe_id
     LEFT JOIN tags t ON rt.tag_id = t.id
@@ -54,7 +60,7 @@ app.get('/api/recipes/:id', (req: Request, res: Response) => {
     GROUP BY r.id
   `;
   
-  db.get(query, [id], (err: Error | null, row: DbRecipeRow) => {
+  db.get(query, [id], (err: Error | null, row: any) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -65,7 +71,7 @@ app.get('/api/recipes/:id', (req: Request, res: Response) => {
     
     const recipe: Recipe = {
       ...row,
-      tags: row.tags ? row.tags.split(',') : []
+      tags: row.tags ? JSON.parse(row.tags).filter((tag: any) => tag.id !== null) : []
     };
     
     res.json(recipe);
@@ -356,6 +362,124 @@ app.delete('/api/tags/:id', (req: any, res: any) => {
         );
       }
     );
+  });
+});
+
+// Update recipe tags
+app.put('/api/recipes/:id/tags', (req: any, res: any) => {
+  const { id } = req.params;
+  const { tagIds }: { tagIds: number[] } = req.body;
+  
+  if (!Array.isArray(tagIds)) {
+    return res.status(400).json({ error: 'tagIds must be an array' });
+  }
+  
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    
+    // First, remove all existing tags for this recipe
+    db.run('DELETE FROM recipe_tags WHERE recipe_id = ?', [id], (err: Error | null) => {
+      if (err) {
+        db.run('ROLLBACK');
+        return res.status(500).json({ error: err.message });
+      }
+      
+      // If no tags to add, just commit and return
+      if (tagIds.length === 0) {
+        db.run('COMMIT', (err: Error | null) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          
+          // Return the updated recipe
+          const query = `
+            SELECT r.*, 
+                   JSON_GROUP_ARRAY(
+                     JSON_OBJECT('id', t.id, 'name', t.name, 'parent_tag_id', t.parent_tag_id)
+                   ) as tags
+            FROM recipes r
+            LEFT JOIN recipe_tags rt ON r.id = rt.recipe_id
+            LEFT JOIN tags t ON rt.tag_id = t.id
+            WHERE r.id = ?
+            GROUP BY r.id
+          `;
+          
+          db.get(query, [id], (err: Error | null, row: any) => {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            
+            if (!row) {
+              return res.status(404).json({ error: 'Recipe not found' });
+            }
+            
+            const recipe = {
+              ...row,
+              tags: row.tags ? JSON.parse(row.tags).filter((tag: any) => tag.id !== null) : []
+            };
+            
+            res.json(recipe);
+          });
+        });
+        return;
+      }
+      
+      // Add new tags
+      const insertPromises = tagIds.map(tagId => {
+        return new Promise<void>((resolve, reject) => {
+          db.run('INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)', [id, tagId], (err: Error | null) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
+      });
+      
+      Promise.all(insertPromises)
+        .then(() => {
+          db.run('COMMIT', (err: Error | null) => {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            
+            // Return the updated recipe with full tag objects
+            const query = `
+              SELECT r.*, 
+                     JSON_GROUP_ARRAY(
+                       JSON_OBJECT('id', t.id, 'name', t.name, 'parent_tag_id', t.parent_tag_id)
+                     ) as tags
+              FROM recipes r
+              LEFT JOIN recipe_tags rt ON r.id = rt.recipe_id
+              LEFT JOIN tags t ON rt.tag_id = t.id
+              WHERE r.id = ?
+              GROUP BY r.id
+            `;
+            
+            db.get(query, [id], (err: Error | null, row: any) => {
+              if (err) {
+                return res.status(500).json({ error: err.message });
+              }
+              
+              if (!row) {
+                return res.status(404).json({ error: 'Recipe not found' });
+              }
+              
+              const recipe = {
+                ...row,
+                tags: row.tags ? JSON.parse(row.tags).filter((tag: any) => tag.id !== null) : []
+              };
+              
+              res.json(recipe);
+            });
+          });
+        })
+        .catch(err => {
+          db.run('ROLLBACK');
+          res.status(500).json({ error: err.message });
+        });
+    });
   });
 });
 

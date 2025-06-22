@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useTags } from '../contexts/TagContext';
 import { Tag } from '../types';
+import TagAutocomplete from './TagAutocomplete';
+import TagChip from './TagChip';
 
 interface TagManagementProps {
   onBack: () => void;
@@ -156,126 +158,15 @@ const TagManagement: React.FC<TagManagementProps> = ({ onBack, onTagsChanged }) 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
-  const [parentTagInput, setParentTagInput] = useState('');
-  const [showParentDropdown, setShowParentDropdown] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     tag: Tag;
     affectedRecipes: any[];
     promotedChildren: any[];
   } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const autocompleteRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
-        setShowParentDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const getAllTagsFlat = (tagList: Tag[]): Tag[] => {
-    let flatTags: Tag[] = [];
-    const traverse = (tags: Tag[]) => {
-      for (const tag of tags) {
-        flatTags.push(tag);
-        if (tag.children) {
-          traverse(tag.children);
-        }
-      }
-    };
-    traverse(tagList);
-    return flatTags;
-  };
-
-  const getFilteredTags = (): Tag[] => {
-    if (!parentTagInput.trim()) return getAllTagsFlat(tags);
-    return getAllTagsFlat(tags).filter(tag => 
-      tag.name.toLowerCase().includes(parentTagInput.toLowerCase())
-    );
-  };
-
-  const getDropdownOptions = (): (Tag | null)[] => {
-    const filtered = getFilteredTags();
-    // Add null option for "No parent" when input is empty or when searching
-    if (!parentTagInput.trim()) {
-      return [null, ...filtered];
-    }
-    return filtered;
-  };
 
   const handleParentTagSelect = (tag: Tag | null) => {
-    if (tag) {
-      setSelectedParentId(tag.id || null);
-      setParentTagInput(tag.name);
-    } else {
-      setSelectedParentId(null);
-      setParentTagInput('');
-    }
-    setShowParentDropdown(false);
-    setHighlightedIndex(-1);
-  };
-
-  const handleParentTagInputChange = (value: string) => {
-    setParentTagInput(value);
-    setShowParentDropdown(true);
-    setHighlightedIndex(-1);
-    
-    // If input exactly matches a tag name, select it
-    const exactMatch = getAllTagsFlat(tags).find(tag => 
-      tag.name.toLowerCase() === value.toLowerCase()
-    );
-    if (exactMatch) {
-      setSelectedParentId(exactMatch.id || null);
-    } else if (value === '') {
-      setSelectedParentId(null);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showParentDropdown) return;
-
-    const options = getDropdownOptions();
-    
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setHighlightedIndex(prev => 
-          prev < options.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setHighlightedIndex(prev => 
-          prev > 0 ? prev - 1 : options.length - 1
-        );
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < options.length) {
-          handleParentTagSelect(options[highlightedIndex]);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        setShowParentDropdown(false);
-        setHighlightedIndex(-1);
-        break;
-    }
-  };
-
-  const clearParentSelection = () => {
-    setSelectedParentId(null);
-    setParentTagInput('');
-    setShowParentDropdown(false);
-    setHighlightedIndex(-1);
+    setSelectedParentId(tag?.id || null);
   };
 
   const handleCreateTag = async (e: React.FormEvent) => {
@@ -289,8 +180,6 @@ const TagManagement: React.FC<TagManagementProps> = ({ onBack, onTagsChanged }) 
       });
       setNewTagName('');
       setSelectedParentId(null);
-      setParentTagInput('');
-      setShowParentDropdown(false);
       setShowCreateForm(false);
       onTagsChanged?.();
     } catch (err) {
@@ -346,12 +235,11 @@ const TagManagement: React.FC<TagManagementProps> = ({ onBack, onTagsChanged }) 
           marginBottom: '0.25rem',
           border: '1px solid #e9ecef'
         }}>
-          <span style={{ 
-            fontWeight: level === 0 ? 'bold' : 'normal',
-            color: level === 0 ? '#2c3e50' : '#34495e'
-          }}>
-            {tag.name}
-          </span>
+          <TagChip 
+            tag={tag}
+            variant="normal"
+            size={level === 0 ? 'medium' : 'small'}
+          />
           
           <button
             onClick={() => handleDeleteClick(tag)}
@@ -462,110 +350,17 @@ const TagManagement: React.FC<TagManagementProps> = ({ onBack, onTagsChanged }) 
               />
             </div>
 
-            <div style={{ marginBottom: '1rem', position: 'relative' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                 Parent Tag (optional):
               </label>
-              <div ref={autocompleteRef} style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={parentTagInput}
-                  onChange={(e) => handleParentTagInputChange(e.target.value)}
-                  onFocus={() => setShowParentDropdown(true)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Search for parent tag or leave empty for root level"
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    paddingRight: parentTagInput ? '2.5rem' : '0.5rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '1rem'
-                  }}
-                />
-                {parentTagInput && (
-                  <button
-                    type="button"
-                    onClick={clearParentSelection}
-                    style={{
-                      position: 'absolute',
-                      right: '0.5rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '1.2rem',
-                      color: '#999'
-                    }}
-                  >
-                    ×
-                  </button>
-                )}
-                
-                {showParentDropdown && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    backgroundColor: 'white',
-                    border: '1px solid #ddd',
-                    borderTop: 'none',
-                    borderRadius: '0 0 4px 4px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    zIndex: 1000,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    {getDropdownOptions().map((option, index) => {
-                      const isHighlighted = index === highlightedIndex;
-                      const isSelected = option ? selectedParentId === option.id : selectedParentId === null;
-                      
-                      return (
-                        <div
-                          key={option?.id || 'no-parent'}
-                          onClick={() => handleParentTagSelect(option)}
-                          onMouseEnter={() => setHighlightedIndex(index)}
-                          style={{
-                            padding: '0.5rem',
-                            cursor: 'pointer',
-                            borderBottom: '1px solid #eee',
-                            backgroundColor: isHighlighted 
-                              ? '#2196f3' 
-                              : isSelected 
-                                ? '#e3f2fd' 
-                                : 'white',
-                            color: isHighlighted ? 'white' : 'black'
-                          }}
-                        >
-                          {option ? option.name : <em>No parent (root level)</em>}
-                        </div>
-                      );
-                    })}
-                    {getDropdownOptions().length === 0 && (
-                      <div style={{
-                        padding: '0.5rem',
-                        color: '#999',
-                        fontStyle: 'italic'
-                      }}>
-                        No matching tags found
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              {selectedParentId && (
-                <div style={{
-                  marginTop: '0.5rem',
-                  padding: '0.25rem 0.5rem',
-                  backgroundColor: '#e3f2fd',
-                  borderRadius: '4px',
-                  fontSize: '0.875rem'
-                }}>
-                  Selected: <strong>{parentTagInput}</strong>
-                </div>
-              )}
+              <TagAutocomplete
+                tags={tags}
+                selectedTagIds={selectedParentId ? [selectedParentId] : []}
+                onTagSelect={handleParentTagSelect}
+                placeholder="Search for parent tag or leave empty for root level"
+                allowNoParent={true}
+              />
             </div>
 
             <button

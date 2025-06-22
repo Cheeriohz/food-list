@@ -9,7 +9,7 @@ export interface Recipe {
   servings?: number;
   created_at?: string;
   updated_at?: string;
-  tags?: string[];
+  tags?: Tag[];
 }
 
 export interface Tag {
@@ -31,6 +31,7 @@ export interface RecipeContextType {
   updateRecipe: (id: number, recipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   deleteRecipe: (id: number) => Promise<void>;
   searchRecipes: (query: string, tags: string[]) => Promise<void>;
+  updateRecipeTags: (recipeId: number, tagIds: number[]) => Promise<void>;
 }
 
 export interface TagContextType {
