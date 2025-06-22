@@ -105,3 +105,11 @@ The application uses React Context with useReducer for state management. Both co
 - **Frontend**: Uses React JSX transform, includes DOM types
 - **Shared types**: Recipe, Tag, and API interfaces defined in both projects
 - **Development**: ts-node for backend development, react-scripts handles frontend
+
+## Git Workflow Instructions
+When creating or modifying files:
+1. Add new/modified files to git tracking with `git add <filename>` 
+2. DO NOT automatically stage changes for commit
+3. DO NOT automatically commit changes  
+4. Let the user review code changes before they decide to commit
+5. Only commit when explicitly requested by the user
