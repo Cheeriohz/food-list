@@ -1,6 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import { useRecipes } from '../contexts/RecipeContext';
 import { useTags } from '../contexts/TagContext';
+import { Tag } from '../types';
 
 interface RecipeFormProps {
   onCancel: () => void;
@@ -86,6 +87,11 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onCancel, onSuccess }) => {
     }
 
     try {
+      // Convert selected tag names to Tag objects
+      const selectedTagObjects = formData.selectedTags
+        .map(tagName => tags.find(tag => tag.name === tagName))
+        .filter((tag): tag is Tag => tag !== undefined);
+
       const recipeData = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
@@ -94,7 +100,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ onCancel, onSuccess }) => {
         prep_time: formData.prep_time ? parseInt(formData.prep_time) : undefined,
         cook_time: formData.cook_time ? parseInt(formData.cook_time) : undefined,
         servings: formData.servings ? parseInt(formData.servings) : undefined,
-        tags: formData.selectedTags
+        tags: selectedTagObjects
       };
 
       await createRecipe(recipeData);

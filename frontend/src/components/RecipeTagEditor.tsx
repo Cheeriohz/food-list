@@ -246,12 +246,7 @@ const RecipeTagEditor: React.FC<RecipeTagEditorProps> = ({
       borderRadius: '8px',
       padding: '1rem',
       marginTop: '1rem',
-      backgroundColor: '#f9f9f9',
-      // Mobile responsive
-      '@media (max-width: 768px)': {
-        padding: '0.75rem',
-        margin: '0.5rem 0'
-      }
+      backgroundColor: '#f9f9f9'
     }}>
       <div style={{ 
         display: 'flex', 
