@@ -543,80 +543,541 @@ const ExpandedRecipeView: React.FC<{
 };
 ```
 
-## Performance Optimizations
+## Performance Optimizations for Large-Scale Datasets
 
-### Virtual Scrolling Implementation
+### Overview: Handling 100,000+ Records
+
+The search system is designed to handle massive datasets efficiently through multi-layered optimization strategies. At 100k records, we implement enterprise-grade search patterns used by systems like Elasticsearch and Lucene.
+
+### Search Architecture for Scale
+
+#### 1. Multi-Tiered Search Index
+
 ```typescript
-const useVirtualization = ({
-  itemCount,
-  itemHeight,
-  overscan = 5
-}: VirtualizationOptions) => {
-  const [scrollTop, setScrollTop] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(0);
+interface SearchArchitecture {
+  // Tier 1: Inverted Index (Primary)
+  invertedIndex: Map<string, PostingList>;
   
-  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(
-    itemCount - 1,
-    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
-  );
+  // Tier 2: N-gram Index (Fuzzy matching)
+  ngramIndex: Map<string, Set<number>>;
   
-  const visibleItems = useMemo(() => {
-    const items = [];
-    for (let i = startIndex; i <= endIndex; i++) {
-      items.push({
-        index: i,
-        offsetTop: i * itemHeight,
-        height: itemHeight
-      });
+  // Tier 3: Semantic Clusters (Related terms)
+  semanticIndex: Map<string, ClusterInfo>;
+  
+  // Tier 4: LRU Cache (Hot queries)
+  queryCache: LRUCache<string, SearchResult[]>;
+}
+
+interface PostingList {
+  termFrequency: Map<number, number>; // document_id -> frequency
+  documentFrequency: number; // total docs containing term
+  positions: Map<number, number[]>; // document_id -> [positions]
+}
+
+class ScalableSearchEngine {
+  private indices: SearchArchitecture;
+  private searchMetrics: SearchMetrics;
+  
+  // Memory-efficient index building
+  async buildIndex(recipes: Recipe[], tags: Tag[]): Promise<void> {
+    console.time('Index Build');
+    
+    // Process in chunks to avoid memory spikes
+    const CHUNK_SIZE = 1000;
+    const totalChunks = Math.ceil(recipes.length / CHUNK_SIZE);
+    
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = recipes.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      await this.processChunk(chunk);
+      
+      // Yield control to prevent UI blocking
+      if (i % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
     }
-    return items;
-  }, [startIndex, endIndex, itemHeight]);
+    
+    await this.optimizeIndex();
+    console.timeEnd('Index Build');
+  }
   
-  return { visibleItems, totalHeight: itemCount * itemHeight };
-};
-```
-
-### Search Index Optimization
-```typescript
-class OptimizedSearchEngine {
-  private tokenIndex: Map<string, Set<number>> = new Map();
-  private fuzzyMatcher: FuzzyMatcher;
-  
-  buildIndex(recipes: Recipe[], tags: Tag[]): void {
-    // Build inverted index for fast lookups
+  private async processChunk(recipes: Recipe[]): Promise<void> {
+    const batch = new Map<string, Set<number>>();
+    
     recipes.forEach(recipe => {
-      const tokens = this.tokenize(recipe.title + ' ' + recipe.description + ' ' + recipe.ingredients);
-      tokens.forEach(token => {
-        if (!this.tokenIndex.has(token)) {
-          this.tokenIndex.set(token, new Set());
-        }
-        this.tokenIndex.get(token)!.add(recipe.id!);
+      const tokens = this.advancedTokenize(recipe);
+      tokens.forEach(({ token, weight, positions }) => {
+        this.addToInvertedIndex(token, recipe.id!, weight, positions);
+        this.addToNgramIndex(token, recipe.id!);
       });
     });
   }
+}
+```
+
+#### 2. Advanced Tokenization and Scoring
+
+```typescript
+interface TokenInfo {
+  token: string;
+  weight: number; // TF-IDF weight
+  positions: number[]; // Character positions
+  field: 'title' | 'description' | 'ingredients' | 'tags';
+}
+
+class AdvancedTokenizer {
+  private stopWords = new Set(['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']);
+  private stemmer = new PorterStemmer();
   
-  search(query: string): SearchResult[] {
-    const queryTokens = this.tokenize(query);
-    const candidateIds = this.getCandidateIds(queryTokens);
+  advancedTokenize(recipe: Recipe): TokenInfo[] {
+    const tokens: TokenInfo[] = [];
     
-    return candidateIds
+    // Weighted field processing
+    const fields = [
+      { content: recipe.title, weight: 3.0, field: 'title' as const },
+      { content: recipe.tags?.map(t => t.name).join(' ') || '', weight: 2.5, field: 'tags' as const },
+      { content: recipe.description || '', weight: 1.5, field: 'description' as const },
+      { content: recipe.ingredients, weight: 2.0, field: 'ingredients' as const }
+    ];
+    
+    fields.forEach(({ content, weight, field }) => {
+      const fieldTokens = this.tokenizeField(content, weight, field);
+      tokens.push(...fieldTokens);
+    });
+    
+    return tokens;
+  }
+  
+  private tokenizeField(content: string, weight: number, field: string): TokenInfo[] {
+    const tokens: TokenInfo[] = [];
+    const words = content.toLowerCase().match(/\b\w+\b/g) || [];
+    
+    words.forEach((word, index) => {
+      if (this.stopWords.has(word) || word.length < 3) return;
+      
+      // Original word
+      tokens.push({
+        token: word,
+        weight,
+        positions: [index],
+        field: field as any
+      });
+      
+      // Stemmed version
+      const stemmed = this.stemmer.stem(word);
+      if (stemmed !== word) {
+        tokens.push({
+          token: stemmed,
+          weight: weight * 0.8, // Slightly lower weight for stemmed
+          positions: [index],
+          field: field as any
+        });
+      }
+      
+      // N-grams for fuzzy matching
+      if (word.length >= 4) {
+        for (let i = 0; i <= word.length - 3; i++) {
+          const ngram = word.substring(i, i + 3);
+          tokens.push({
+            token: `#${ngram}#`, // Mark as n-gram
+            weight: weight * 0.5,
+            positions: [index],
+            field: field as any
+          });
+        }
+      }
+    });
+    
+    return tokens;
+  }
+}
+```
+
+#### 3. Optimized Search Execution
+
+```typescript
+interface SearchPerformanceConfig {
+  maxResults: number; // Limit result set size
+  searchTimeout: number; // Prevent runaway queries
+  cacheSize: number; // LRU cache size
+  minQueryLength: number; // Minimum query length
+  debounceMs: number; // Debounce search input
+}
+
+class PerformantSearchExecution {
+  private config: SearchPerformanceConfig = {
+    maxResults: 100,
+    searchTimeout: 500, // 500ms max
+    cacheSize: 1000,
+    minQueryLength: 2,
+    debounceMs: 150
+  };
+  
+  async search(query: string): Promise<SearchResult[]> {
+    // Performance guards
+    if (query.length < this.config.minQueryLength) return [];
+    
+    // Check cache first
+    const cached = this.indices.queryCache.get(query);
+    if (cached) return cached;
+    
+    // Execute with timeout
+    return Promise.race([
+      this.executeSearch(query),
+      this.timeoutPromise(this.config.searchTimeout)
+    ]);
+  }
+  
+  private async executeSearch(query: string): Promise<SearchResult[]> {
+    const startTime = performance.now();
+    
+    // Multi-stage search pipeline
+    const results = await this.pipelineSearch(query);
+    
+    const endTime = performance.now();
+    this.searchMetrics.recordSearch(query, endTime - startTime, results.length);
+    
+    // Cache successful results
+    if (results.length > 0) {
+      this.indices.queryCache.set(query, results);
+    }
+    
+    return results;
+  }
+  
+  private async pipelineSearch(query: string): Promise<SearchResult[]> {
+    // Stage 1: Fast exact matches (title, tags)
+    const exactMatches = await this.exactMatchSearch(query);
+    if (exactMatches.length >= this.config.maxResults) {
+      return exactMatches.slice(0, this.config.maxResults);
+    }
+    
+    // Stage 2: Prefix matches
+    const prefixMatches = await this.prefixMatchSearch(query);
+    const combined = this.mergeResults(exactMatches, prefixMatches);
+    if (combined.length >= this.config.maxResults) {
+      return combined.slice(0, this.config.maxResults);
+    }
+    
+    // Stage 3: Fuzzy matches (n-grams)
+    const fuzzyMatches = await this.fuzzyMatchSearch(query);
+    const final = this.mergeResults(combined, fuzzyMatches);
+    
+    return final.slice(0, this.config.maxResults);
+  }
+  
+  private async exactMatchSearch(query: string): Promise<SearchResult[]> {
+    const tokens = query.toLowerCase().split(/\s+/);
+    const candidateSets: Set<number>[] = [];
+    
+    // Get posting lists for each token
+    tokens.forEach(token => {
+      const postingList = this.indices.invertedIndex.get(token);
+      if (postingList) {
+        candidateSets.push(new Set(postingList.termFrequency.keys()));
+      }
+    });
+    
+    if (candidateSets.length === 0) return [];
+    
+    // Intersection for AND semantics
+    const intersection = candidateSets.reduce((acc, set) => 
+      new Set([...acc].filter(id => set.has(id)))
+    );
+    
+    // Score and sort
+    return Array.from(intersection)
       .map(id => ({
         id,
-        score: this.calculateRelevanceScore(id, queryTokens),
-        type: 'recipe' as const
+        score: this.calculateTFIDFScore(id, tokens),
+        type: 'recipe' as const,
+        matchType: 'exact' as const
       }))
-      .filter(result => result.score > 0.1)
       .sort((a, b) => b.score - a.score);
   }
   
-  private tokenize(text: string): string[] {
-    return text.toLowerCase()
-      .replace(/[^\w\s]/g, ' ')
-      .split(/\s+/)
-      .filter(token => token.length > 2);
+  private calculateTFIDFScore(documentId: number, queryTokens: string[]): number {
+    let score = 0;
+    const documentLength = this.getDocumentLength(documentId);
+    
+    queryTokens.forEach(token => {
+      const postingList = this.indices.invertedIndex.get(token);
+      if (!postingList) return;
+      
+      const tf = postingList.termFrequency.get(documentId) || 0;
+      const df = postingList.documentFrequency;
+      const totalDocs = this.getTotalDocumentCount();
+      
+      // TF-IDF calculation
+      const tfScore = tf / documentLength;
+      const idfScore = Math.log(totalDocs / (df + 1));
+      
+      score += tfScore * idfScore;
+    });
+    
+    return score;
   }
 }
+```
+
+### Memory Management for Large Datasets
+
+#### 1. Lazy Loading and Pagination
+
+```typescript
+class LazySearchResults {
+  private loadedPages = new Map<number, SearchResult[]>();
+  private pageSize = 20;
+  
+  async getPage(pageIndex: number): Promise<SearchResult[]> {
+    if (this.loadedPages.has(pageIndex)) {
+      return this.loadedPages.get(pageIndex)!;
+    }
+    
+    const page = await this.loadPage(pageIndex);
+    this.loadedPages.set(pageIndex, page);
+    
+    // Garbage collect old pages
+    if (this.loadedPages.size > 10) {
+      const oldestPage = Math.min(...this.loadedPages.keys());
+      this.loadedPages.delete(oldestPage);
+    }
+    
+    return page;
+  }
+  
+  private async loadPage(pageIndex: number): Promise<SearchResult[]> {
+    const offset = pageIndex * this.pageSize;
+    // Load only necessary recipe data for initial display
+    return this.searchEngine.searchPaginated(this.currentQuery, offset, this.pageSize);
+  }
+}
+```
+
+#### 2. Incremental Index Updates
+
+```typescript
+class IncrementalIndexManager {
+  private indexVersion = 0;
+  private pendingUpdates: IndexUpdate[] = [];
+  private updateBatchSize = 100;
+  
+  async updateIndex(changes: DataChange[]): Promise<void> {
+    this.pendingUpdates.push(...changes.map(change => ({
+      type: change.type,
+      data: change.data,
+      timestamp: Date.now()
+    })));
+    
+    // Batch updates for efficiency
+    if (this.pendingUpdates.length >= this.updateBatchSize) {
+      await this.processPendingUpdates();
+    }
+  }
+  
+  private async processPendingUpdates(): Promise<void> {
+    const updates = this.pendingUpdates.splice(0, this.updateBatchSize);
+    
+    // Group by operation type
+    const groups = {
+      insertions: updates.filter(u => u.type === 'insert'),
+      updates: updates.filter(u => u.type === 'update'),
+      deletions: updates.filter(u => u.type === 'delete')
+    };
+    
+    // Process in order: deletions, updates, insertions
+    await this.processDeleteions(groups.deletions);
+    await this.processUpdates(groups.updates);
+    await this.processInsertions(groups.insertions);
+    
+    this.indexVersion++;
+    this.invalidateQueryCache();
+  }
+}
+```
+
+### Performance Benchmarks and Expectations
+
+#### Expected Performance at Scale
+
+| Dataset Size | Index Build Time | Memory Usage | Search Latency | 
+|--------------|------------------|--------------|----------------|
+| 1,000 recipes | 50ms | 2MB | 5-10ms |
+| 10,000 recipes | 500ms | 15MB | 10-20ms |
+| 100,000 recipes | 5-8s | 120MB | 20-50ms |
+| 500,000 recipes | 25-40s | 500MB | 50-100ms |
+
+#### Performance Monitoring
+
+```typescript
+class SearchMetrics {
+  private metrics = {
+    searchLatency: new PerformanceBuffer(1000),
+    indexBuildTime: 0,
+    memoryUsage: 0,
+    cacheHitRate: 0,
+    queryFrequency: new Map<string, number>()
+  };
+  
+  recordSearch(query: string, latency: number, resultCount: number): void {
+    this.metrics.searchLatency.add(latency);
+    this.metrics.queryFrequency.set(
+      query, 
+      (this.metrics.queryFrequency.get(query) || 0) + 1
+    );
+    
+    // Performance alerts
+    if (latency > 200) {
+      console.warn(`Slow search query: "${query}" took ${latency}ms`);
+    }
+  }
+  
+  getPerformanceReport(): PerformanceReport {
+    return {
+      averageLatency: this.metrics.searchLatency.average(),
+      p95Latency: this.metrics.searchLatency.percentile(95),
+      memoryUsage: this.estimateMemoryUsage(),
+      cacheEfficiency: this.calculateCacheEfficiency(),
+      topQueries: this.getTopQueries(10)
+    };
+  }
+}
+```
+
+### Scalability Strategies
+
+#### 1. Web Workers for Heavy Operations
+
+```typescript
+// search-worker.ts
+class SearchWorker {
+  private searchEngine: ScalableSearchEngine;
+  
+  async initialize(recipes: Recipe[], tags: Tag[]): Promise<void> {
+    this.searchEngine = new ScalableSearchEngine();
+    await this.searchEngine.buildIndex(recipes, tags);
+    postMessage({ type: 'INIT_COMPLETE' });
+  }
+  
+  async search(query: string): Promise<SearchResult[]> {
+    const results = await this.searchEngine.search(query);
+    return results;
+  }
+}
+
+// Main thread usage
+class WorkerSearchService {
+  private worker: Worker;
+  private ready = false;
+  
+  constructor() {
+    this.worker = new Worker('/search-worker.js');
+    this.worker.onmessage = this.handleMessage.bind(this);
+  }
+  
+  async search(query: string): Promise<SearchResult[]> {
+    if (!this.ready) throw new Error('Search service not ready');
+    
+    return new Promise((resolve) => {
+      const requestId = Math.random().toString(36);
+      
+      this.worker.postMessage({
+        type: 'SEARCH',
+        requestId,
+        query
+      });
+      
+      const handler = (event: MessageEvent) => {
+        if (event.data.requestId === requestId) {
+          this.worker.removeEventListener('message', handler);
+          resolve(event.data.results);
+        }
+      };
+      
+      this.worker.addEventListener('message', handler);
+    });
+  }
+}
+```
+
+#### 2. Progressive Enhancement
+
+```typescript
+class ProgressiveSearchUX {
+  private fastSearchThreshold = 1000; // Records below this use simple search
+  private datasetSize: number;
+  
+  determineSearchStrategy(datasetSize: number): SearchStrategy {
+    if (datasetSize < this.fastSearchThreshold) {
+      return new SimpleClientSearch(); // Fast, simple implementation
+    } else if (datasetSize < 50000) {
+      return new OptimizedClientSearch(); // Advanced indexing
+    } else {
+      return new HybridServerSearch(); // Server-side search with client caching
+    }
+  }
+  
+  async initializeSearch(recipes: Recipe[], tags: Tag[]): Promise<void> {
+    this.datasetSize = recipes.length;
+    const strategy = this.determineSearchStrategy(this.datasetSize);
+    
+    // Show loading indicator for large datasets
+    if (this.datasetSize > 10000) {
+      this.showIndexingProgress();
+    }
+    
+    await strategy.initialize(recipes, tags);
+    this.hideIndexingProgress();
+  }
+}
+```
+
+### Database Optimization for Search
+
+#### Optimized Queries for Large Datasets
+
+```sql
+-- Create specialized indexes for search
+CREATE INDEX idx_recipes_search_vector ON recipes(
+  title, description, ingredients
+) WHERE length(title) > 0;
+
+-- Full-text search index (SQLite FTS5)
+CREATE VIRTUAL TABLE recipes_fts USING fts5(
+  title, description, ingredients, tags,
+  content='recipes',
+  content_rowid='id'
+);
+
+-- Materialized search view
+CREATE VIEW recipe_search_data AS
+SELECT 
+  r.id,
+  r.title,
+  r.description,
+  r.ingredients,
+  GROUP_CONCAT(t.name, ' ') as tag_names,
+  -- Pre-computed search tokens
+  (r.title || ' ' || COALESCE(r.description, '') || ' ' || 
+   r.ingredients || ' ' || GROUP_CONCAT(t.name, ' ')) as search_text
+FROM recipes r
+LEFT JOIN recipe_tags rt ON r.id = rt.recipe_id
+LEFT JOIN tags t ON rt.tag_id = t.id
+GROUP BY r.id;
+
+-- Optimized search query
+SELECT r.*, ts.rank
+FROM recipes r
+JOIN (
+  SELECT rowid as id, rank
+  FROM recipes_fts 
+  WHERE recipes_fts MATCH ?
+  ORDER BY rank
+  LIMIT 100
+) ts ON r.id = ts.id
+ORDER BY ts.rank;
+```
+
+This architecture ensures that even with 100,000+ recipes, search remains responsive with sub-100ms latency for most queries, while maintaining a smooth user experience through progressive loading and efficient memory management.
 ```
 
 ## User Experience Enhancements
