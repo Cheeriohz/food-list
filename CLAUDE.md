@@ -122,3 +122,19 @@ When asked to create a plan for new work:
 5. Add plan files to git tracking for review and iteration
 6. Include in plans: problem statement, solution approach, implementation steps, technical considerations
 7. Wait for plan approval before proceeding with implementation
+
+## Documentation Workflow
+When asked to create documentation of the current codebase (outside of features and bugfixes):
+1. Create documentation under a `documentation/` folder at the project root
+2. Structure documentation in a tree hierarchy:
+   - First layer: Documentation type (e.g., `api/`, `architecture/`, `components/`, `deployment/`, `user-guides/`)
+   - Subsequent layers: Organize as needed for each documentation type
+3. Use descriptive filenames and maintain markdown format
+4. Add documentation files to git tracking
+5. Examples of documentation types:
+   - `documentation/api/` - API endpoint documentation, request/response schemas
+   - `documentation/architecture/` - System design, data flow, database schema
+   - `documentation/components/` - Component interfaces, usage examples, props documentation
+   - `documentation/deployment/` - Setup instructions, environment configuration, troubleshooting
+   - `documentation/user-guides/` - End-user documentation, tutorials, workflows
+   - `documentation/development/` - Coding standards, testing guidelines, contribution workflows
