@@ -208,18 +208,18 @@ graph TD
     B --> E[Recipe State]
     C --> F[Tag State]
     
-    E --> G[recipes: Recipe[]]
-    E --> H[currentRecipe: Recipe | null]
-    E --> I[loading: boolean]
-    E --> J[error: string | null]
+    E --> G["recipes: Recipe[]"]
+    E --> H["currentRecipe: Recipe | null"]
+    E --> I["loading: boolean"]
+    E --> J["error: string | null"]
     
-    F --> K[tags: Tag[]]
-    F --> L[selectedTags: string[]]
-    F --> M[loading: boolean]
-    F --> N[error: string | null]
+    F --> K["tags: Tag[]"]
+    F --> L["selectedTags: string[]"]
+    F --> M["loading: boolean"]
+    F --> N["error: string | null"]
     
-    D --> O[useRecipes() hook]
-    D --> P[useTags() hook]
+    D --> O["useRecipes() hook"]
+    D --> P["useTags() hook"]
     
     O --> Q[CRUD Operations]
     P --> R[Tag Operations]
