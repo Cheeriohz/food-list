@@ -113,3 +113,13 @@ When creating or modifying files:
 3. DO NOT automatically commit changes  
 4. Let the user review code changes before they decide to commit
 5. Only commit when explicitly requested by the user
+
+## Planning and Design Workflow
+When asked to create a plan for new work:
+1. Create a formal plan as a markdown file
+2. Put feature plans in a `features/` folder at the project root
+3. Put bug fix plans in a `bugs/` folder at the project root
+4. Name files descriptively (e.g., `tag-management-feature.md`, `recipe-click-crash-bug.md`)
+5. Add plan files to git tracking for review and iteration
+6. Include in plans: problem statement, solution approach, implementation steps, technical considerations
+7. Wait for plan approval before proceeding with implementation
