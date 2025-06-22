@@ -25,7 +25,17 @@
       "Bash(pkill:*)",
       "Bash(npx ts-node:*)",
       "Bash(find:*)",
-      "WebFetch(domain:blog.jakoblind.no)"
+      "WebFetch(domain:blog.jakoblind.no)",
+      "Bash(grep:*)",
+      "Bash(kill:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(uvx:*)",
+      "Bash(git clone:*)",
+      "Bash(echo $PATH)",
+      "Bash(claude mcp:*)",
+      "Bash(npx:*)",
+      "Bash(npm info:*)"
     ],
     "deny": []
   }
