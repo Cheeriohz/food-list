@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { Recipe, RecipeContextType } from '../types';
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
@@ -76,7 +76,7 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
     }
   };
 
-  const fetchRecipe = async (id: number): Promise<void> => {
+  const fetchRecipe = useCallback(async (id: number): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch(`/api/recipes/${id}`);
@@ -86,7 +86,7 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
-  };
+  }, []);
 
   const createRecipe = async (recipeData: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
