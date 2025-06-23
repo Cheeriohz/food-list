@@ -111,29 +111,6 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
         </div>
       </div>
 
-      {/* Feature highlights */}
-      <div className="features-section">
-        <h3>✨ Features</h3>
-        <div className="features-grid">
-          <div className="feature-item">
-            <div className="feature-icon">🌳</div>
-            <h4>Hierarchical Browsing</h4>
-            <p>Explore recipes organized by categories and tags</p>
-          </div>
-          
-          <div className="feature-item">
-            <div className="feature-icon">⚡</div>
-            <h4>Instant Search</h4>
-            <p>Real-time results as you type with smart suggestions</p>
-          </div>
-          
-          <div className="feature-item">
-            <div className="feature-icon">🎯</div>
-            <h4>Smart Filtering</h4>
-            <p>Find exactly what you're looking for with intelligent filters</p>
-          </div>
-        </div>
-      </div>
 
       <style>{`
         .empty-search-state {
@@ -343,48 +320,6 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
           font-size: 0.9rem;
         }
 
-        /* Features Section */
-        .features-section h3 {
-          margin: 0 0 1.5rem 0;
-          color: #2c3e50;
-          font-size: 1.3rem;
-        }
-
-        .features-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .feature-item {
-          background: white;
-          padding: 1.5rem;
-          border-radius: 12px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease;
-        }
-
-        .feature-item:hover {
-          transform: translateY(-2px);
-        }
-
-        .feature-icon {
-          font-size: 2rem;
-          margin-bottom: 1rem;
-        }
-
-        .feature-item h4 {
-          margin: 0 0 0.5rem 0;
-          color: #2c3e50;
-          font-size: 1.1rem;
-        }
-
-        .feature-item p {
-          margin: 0;
-          color: #666;
-          font-size: 0.9rem;
-          line-height: 1.5;
-        }
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -415,9 +350,6 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
           }
 
-          .features-grid {
-            grid-template-columns: 1fr;
-          }
         }
 
         @media (max-width: 480px) {
