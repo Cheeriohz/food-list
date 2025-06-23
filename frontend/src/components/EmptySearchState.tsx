@@ -62,23 +62,7 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
 
   return (
     <div className="empty-search-state">
-      {/* Hero section */}
-      <div className="hero-section">
-        <div className="hero-icon">👨‍🍳</div>
-        <h2 className="hero-title">Discover Amazing Recipes</h2>
-        <p className="hero-description">
-          Search through thousands of recipes by ingredients, categories, or dish names
-        </p>
-        
-        <button 
-          className="start-searching-button"
-          onClick={onSearchFocus}
-        >
-          <span className="button-icon">🔍</span>
-          Start Searching
-        </button>
-      </div>
-
+      
       {/* Search tips */}
       <div className="tips-section">
         <div className="tips-header">
