@@ -37,7 +37,9 @@
       "Bash(npx:*)",
       "Bash(npm info:*)",
       "Bash(npm run seed:*)",
-      "Bash(fuser:*)"
+      "Bash(fuser:*)",
+      "mcp__sequential-thinking__sequentialthinking_tools",
+      "Bash(true)"
     ],
     "deny": []
   }

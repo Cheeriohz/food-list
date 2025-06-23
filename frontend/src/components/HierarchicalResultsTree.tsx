@@ -555,6 +555,21 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     }
   }, [visibleNodes.length, keyboardNavigationEnabled, useVirtualScrolling, initializeFocus]);
 
+  // Render function for virtual scrolling - MUST be defined before any conditional returns
+  const renderVirtualNode = useCallback((node: TreeNode, level: number, index: number) => {
+    return (
+      <TreeNodeComponent
+        key={node.id}
+        node={node}
+        level={level}
+        onToggleExpansion={toggleNodeExpansion}
+        onRecipeSelect={setSelectedRecipe}
+        isVisible={node.visible}
+        isFocused={false} // Virtual scrolling disables keyboard nav
+      />
+    );
+  }, [toggleNodeExpansion]);
+
   if (loading) {
     return (
       <div className="hierarchical-tree-loading">
@@ -579,21 +594,6 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
       </div>
     );
   }
-
-  // Render function for virtual scrolling
-  const renderVirtualNode = useCallback((node: TreeNode, level: number, index: number) => {
-    return (
-      <TreeNodeComponent
-        key={node.id}
-        node={node}
-        level={level}
-        onToggleExpansion={toggleNodeExpansion}
-        onRecipeSelect={setSelectedRecipe}
-        isVisible={node.visible}
-        isFocused={false} // Virtual scrolling disables keyboard nav
-      />
-    );
-  }, [toggleNodeExpansion]);
 
   return (
     <div className="hierarchical-results-tree">
