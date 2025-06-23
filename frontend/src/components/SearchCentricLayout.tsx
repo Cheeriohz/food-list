@@ -108,10 +108,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
             <UnifiedSearchBar
               query={searchQuery}
               onChange={setSearchQuery}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
               placeholder="Search recipes, ingredients, or categories..."
-              autoFocus={searchFocused}
             />
             
             {indexing && (
@@ -188,12 +185,10 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
 
         .search-header {
           background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
           border-bottom: 1px solid rgba(0, 0, 0, 0.1);
           padding: 1.5rem 0;
-          position: sticky;
-          top: 0;
-          z-index: 100;
+          position: relative;
+          z-index: 10;
           box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
         }
 
@@ -227,6 +222,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
           flex-direction: column;
           align-items: center;
           gap: 0.5rem;
+          z-index: 20;
         }
 
         .indexing-indicator {

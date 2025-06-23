@@ -226,33 +226,18 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
 
   return (
     <div className={`unified-search-bar ${className}`}>
-      <div className="search-input-container">
-        <div className="search-icon">🔍</div>
-        
+      <div className="search-input-container">        
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="search-input"
           autoComplete="off"
           spellCheck="false"
         />
-        
-        {query && (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="clear-button"
-            tabIndex={-1}
-          >
-            ✕
-          </button>
-        )}
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
@@ -285,6 +270,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
         .unified-search-bar {
           position: relative;
           width: 100%;
+          z-index: 30;
         }
 
         .search-input-container {
