@@ -27,6 +27,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
 
   const [searchFocused, setSearchFocused] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [browseMode, setBrowseMode] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     tags: [],
     prepTimeRange: [0, 180],
@@ -41,8 +42,8 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
 
   const { tags } = useTags();
 
-  // Show results when there's a query or when search is focused
-  const shouldShowResults = showResults || searchQuery.length > 0 || searchFocused;
+  // Show results when there's a query, search is focused, or browse mode is active
+  const shouldShowResults = showResults || searchQuery.length > 0 || searchFocused || browseMode;
 
   const handleFiltersReset = () => {
     setSearchFilters({
@@ -56,6 +57,17 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
       minIngredients: null,
       maxIngredients: null
     });
+  };
+
+  const handleBrowseAll = () => {
+    setBrowseMode(true);
+    setSearchFocused(false);
+  };
+
+  const handleBackToEmpty = () => {
+    setBrowseMode(false);
+    setSearchFocused(false);
+    clearSearch();
   };
 
   // Keyboard shortcuts
@@ -160,6 +172,17 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
             </div>
           ) : (
             <div className="results-container fade-in">
+              {browseMode && !searchQuery && (
+                <div className="browse-header">
+                  <button 
+                    className="back-button"
+                    onClick={handleBackToEmpty}
+                  >
+                    ← Back to Home
+                  </button>
+                  <h2>Browse All Recipes</h2>
+                </div>
+              )}
               <AdvancedSearchFilters
                 filters={searchFilters}
                 onFiltersChange={setSearchFilters}
@@ -179,6 +202,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
             onSearchFocus={() => setSearchFocused(true)}
             onCreateRecipe={onCreateRecipe}
             onManageTags={onManageTags}
+            onBrowseAll={handleBrowseAll}
           />
         ) : null}
       </main>
@@ -296,6 +320,46 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
 
         .results-container {
           width: 100%;
+        }
+
+        .browse-header {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 12px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          backdrop-filter: blur(10px);
+        }
+
+        .back-button {
+          background: rgba(52, 152, 219, 0.1);
+          border: 1px solid rgba(52, 152, 219, 0.2);
+          color: #3498db;
+          padding: 0.75rem 1.25rem;
+          border-radius: 25px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .back-button:hover {
+          background: rgba(52, 152, 219, 0.2);
+          border-color: rgba(52, 152, 219, 0.4);
+          transform: translateX(-2px);
+        }
+
+        .browse-header h2 {
+          margin: 0;
+          color: #2c3e50;
+          font-size: 1.5rem;
+          font-weight: 700;
         }
 
         .fade-in {

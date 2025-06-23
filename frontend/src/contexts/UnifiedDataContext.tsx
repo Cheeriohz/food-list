@@ -218,14 +218,19 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
 
   // Build tree when data or search changes
   const buildTree = useCallback(() => {
-    if (state.recipes.length === 0 || state.indexing) return;
+    if (state.recipes.length === 0 || state.indexing) {
+      return;
+    }
     
-    const tree = treeService.buildTree({
+    const buildOptions = {
       searchResults: state.searchResults.length > 0 ? state.searchResults : undefined,
       expandedNodes: state.expandedNodes,
       maxDepth: 10,
       showEmptyTags: state.searchQuery.length === 0 // Show empty tags only when not searching
-    });
+    };
+    
+    const tree = treeService.buildTree(buildOptions);
+    console.log('🌳 Tree built:', tree.length, 'root nodes');
     
     dispatch({ type: 'SET_TREE', payload: tree });
     
@@ -241,6 +246,8 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
 
   // Search functionality
   const performSearch = useCallback(async (query: string) => {
+    console.log('🔍 Search:', query);
+    
     if (query.length < 2) {
       dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
       return;
@@ -248,9 +255,10 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     
     try {
       const results = await searchService.search(query, 100);
+      console.log('🔍 Found:', results.length, 'results');
       dispatch({ type: 'SET_SEARCH_RESULTS', payload: results });
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error('🔍 Search failed:', error);
       dispatch({ type: 'SET_SEARCH_RESULTS', payload: [] });
     }
   }, [searchService]);

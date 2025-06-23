@@ -310,6 +310,9 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     toggleNodeExpansion 
   } = useUnifiedData();
 
+  // Debug logging
+  console.log('🔴 Tree render - Query:', query, 'Nodes:', tree.length, 'Results:', searchResults.length);
+
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
   const [keyboardNavigationEnabled, setKeyboardNavigationEnabled] = useState(true);
@@ -448,6 +451,9 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
   }, [filters]);
 
   const visibleNodes = applyFiltersAndSorting(tree);
+  
+  // Debug visible nodes
+  console.log('🔴 Visible nodes:', visibleNodes.length);
 
   // Keyboard navigation
   const {
@@ -591,6 +597,23 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
           <li>Cooking methods (baked, grilled, fried)</li>
           <li>Cuisine types (italian, mexican, asian)</li>
         </ul>
+      </div>
+    );
+  }
+
+  // Debug: Handle case where search found results but tree is empty
+  if (query && searchResults.length > 0 && visibleNodes.length === 0) {
+    console.error('🔴 DEBUG: Search found results but tree is empty!');
+    console.error('🔴 Search results:', searchResults);
+    console.error('🔴 Tree nodes:', tree);
+    console.error('🔴 Visible nodes:', visibleNodes);
+    
+    return (
+      <div className="no-results">
+        <div className="no-results-icon">⚠️</div>
+        <h3>Search results found but not displaying</h3>
+        <p>Found {searchResults.length} search results but they're not showing in the tree.</p>
+        <p>Check console for debug information.</p>
       </div>
     );
   }

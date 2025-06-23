@@ -75,13 +75,23 @@ class TreeDataService {
       showEmptyTags = false 
     } = options;
 
+    console.log('🌿 TreeDataService: buildTree called with options:', options);
+    console.log('🌿 Has search results:', searchResults?.length || 0);
+    console.log('🌿 Show empty tags:', showEmptyTags);
+
     // If we have search results, build a filtered tree
     if (searchResults && searchResults.length > 0) {
-      return this.buildSearchResultTree(searchResults, expandedNodes, maxDepth);
+      console.log('🌿 TreeDataService: Building search result tree');
+      const tree = this.buildSearchResultTree(searchResults, expandedNodes, maxDepth);
+      console.log('🌿 TreeDataService: Search result tree built with', tree.length, 'root nodes');
+      return tree;
     }
 
     // Otherwise, build full hierarchy
-    return this.buildFullHierarchy(expandedNodes, maxDepth, showEmptyTags);
+    console.log('🌿 TreeDataService: Building full hierarchy');
+    const tree = this.buildFullHierarchy(expandedNodes, maxDepth, showEmptyTags);
+    console.log('🌿 TreeDataService: Full hierarchy built with', tree.length, 'root nodes');
+    return tree;
   }
 
   /**
@@ -239,15 +249,20 @@ class TreeDataService {
     expandedNodes: Set<string>, 
     maxDepth: number
   ): TreeNode[] {
+    console.log('🌿 TreeDataService: buildSearchResultTree with', searchResults.length, 'results');
+    
     const relevantTagIds = new Set<number>();
     const relevantRecipeIds = new Set<number>();
     
     // Collect relevant tags and recipes from search results
     searchResults.forEach(result => {
+      console.log('🌿 Processing search result:', result.type, result.id);
+      
       if (result.type === 'recipe') {
         relevantRecipeIds.add(result.id);
         // Add all tags associated with this recipe
         const tagIds = this.recipeTagMap.get(result.id);
+        console.log('🌿 Recipe', result.id, 'has tags:', tagIds);
         if (tagIds) {
           tagIds.forEach(tagId => relevantTagIds.add(tagId));
         }
@@ -255,23 +270,103 @@ class TreeDataService {
         relevantTagIds.add(result.id);
         // Add all recipes under this tag
         const recipeIds = this.tagRecipeMap.get(result.id);
+        console.log('🌿 Tag', result.id, 'has recipes:', recipeIds);
         if (recipeIds) {
           recipeIds.forEach(recipeId => relevantRecipeIds.add(recipeId));
         }
       }
     });
 
+    console.log('🌿 Relevant tag IDs:', Array.from(relevantTagIds));
+    console.log('🌿 Relevant recipe IDs:', Array.from(relevantRecipeIds));
+
+    // FALLBACK: If no recipes found via normal mapping, include all search result recipes directly
+    if (relevantRecipeIds.size === 0) {
+      console.log('🌿 No recipes found via tag mapping, adding search result recipes directly');
+      searchResults.forEach(result => {
+        if (result.type === 'recipe') {
+          relevantRecipeIds.add(result.id);
+        }
+      });
+    }
+
     // Add parent tags to show complete hierarchy
     const allRelevantTagIds = this.expandTagHierarchy(relevantTagIds);
+    console.log('🌿 All relevant tag IDs (with parents):', Array.from(allRelevantTagIds));
+
+    // If we have recipes but no tags, create a simple flat structure
+    if (relevantRecipeIds.size > 0 && allRelevantTagIds.size === 0) {
+      console.log('🌿 Creating flat recipe structure (no tags found)');
+      return this.buildFlatRecipeTree(Array.from(relevantRecipeIds), searchResults);
+    }
 
     // Build hierarchy with only relevant items
-    return this.buildTagHierarchy(
+    const tree = this.buildTagHierarchy(
       Array.from(allRelevantTagIds),
       relevantRecipeIds,
       expandedNodes,
       maxDepth,
       searchResults
     );
+    
+    console.log('🌿 Final search tree:', tree.length, 'root nodes');
+    return tree;
+  }
+
+  /**
+   * Build flat tree structure for recipes when no tags are found
+   */
+  private buildFlatRecipeTree(recipeIds: number[], searchResults?: SearchResult[]): TreeNode[] {
+    console.log('🌿 TreeDataService: buildFlatRecipeTree with', recipeIds.length, 'recipes');
+    
+    const nodes: TreeNode[] = [];
+    
+    recipeIds.forEach(recipeId => {
+      const recipe = this.recipeMap.get(recipeId);
+      if (!recipe || !recipe.id) return;
+
+      // Calculate match score if this is a search result
+      let matchScore = 0;
+      if (searchResults) {
+        const result = searchResults.find(r => r.type === 'recipe' && r.id === recipe.id);
+        matchScore = result ? result.score : 0;
+      }
+
+      const recipeNode: TreeNode = {
+        id: `recipe-${recipe.id}`,
+        type: 'recipe',
+        name: recipe.title,
+        level: 0,
+        expanded: false,
+        visible: true,
+        matchScore,
+        children: [],
+        recipeData: {
+          id: recipe.id,
+          title: recipe.title,
+          description: recipe.description || '',
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions,
+          prep_time: recipe.prep_time,
+          cook_time: recipe.cook_time,
+          servings: recipe.servings,
+          tags: recipe.tags || [],
+          thumbnail: undefined
+        }
+      };
+
+      nodes.push(recipeNode);
+    });
+
+    // Sort by match score first, then alphabetically
+    return nodes.sort((a, b) => {
+      if (searchResults) {
+        if (a.matchScore !== b.matchScore) {
+          return b.matchScore - a.matchScore;
+        }
+      }
+      return a.name.localeCompare(b.name);
+    });
   }
 
   /**

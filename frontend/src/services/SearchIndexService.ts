@@ -102,12 +102,15 @@ class SearchIndexService {
    * Search with multi-stage pipeline
    */
   async search(query: string, maxResults: number = 100): Promise<SearchResult[]> {
-    if (!query || query.length < 2) return [];
+    if (!query || query.length < 2) {
+      return [];
+    }
     
     const startTime = performance.now();
     
     // Stage 1: Exact matches (fastest)
     const exactMatches = await this.exactMatchSearch(query);
+    
     if (exactMatches.length >= maxResults) {
       this.logSearchPerformance(query, performance.now() - startTime, exactMatches.length);
       return exactMatches.slice(0, maxResults);
@@ -116,6 +119,7 @@ class SearchIndexService {
     // Stage 2: Prefix matches
     const prefixMatches = await this.prefixMatchSearch(query);
     const combined = this.mergeAndDeduplicateResults(exactMatches, prefixMatches);
+    
     if (combined.length >= maxResults) {
       this.logSearchPerformance(query, performance.now() - startTime, combined.length);
       return combined.slice(0, maxResults);
