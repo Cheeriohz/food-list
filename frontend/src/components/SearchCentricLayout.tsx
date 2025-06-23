@@ -3,6 +3,8 @@ import { useUnifiedData } from '../contexts/UnifiedDataContext';
 import UnifiedSearchBar from './UnifiedSearchBar';
 import HierarchicalResultsTree from './HierarchicalResultsTree';
 import EmptySearchState from './EmptySearchState';
+import AdvancedSearchFilters, { SearchFilters } from './AdvancedSearchFilters';
+import { useTags } from '../contexts/TagContext';
 
 interface SearchCentricLayoutProps {
   children?: React.ReactNode;
@@ -21,9 +23,37 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
   } = useUnifiedData();
 
   const [searchFocused, setSearchFocused] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    tags: [],
+    prepTimeRange: [0, 180],
+    cookTimeRange: [0, 240],
+    servingsRange: [1, 12],
+    sortBy: 'relevance',
+    sortOrder: 'desc',
+    hasDescription: null,
+    minIngredients: null,
+    maxIngredients: null
+  });
+
+  const { tags } = useTags();
 
   // Show results when there's a query or when search is focused
   const shouldShowResults = showResults || searchQuery.length > 0 || searchFocused;
+
+  const handleFiltersReset = () => {
+    setSearchFilters({
+      tags: [],
+      prepTimeRange: [0, 180],
+      cookTimeRange: [0, 240],
+      servingsRange: [1, 12],
+      sortBy: 'relevance',
+      sortOrder: 'desc',
+      hasDescription: null,
+      minIngredients: null,
+      maxIngredients: null
+    });
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -125,7 +155,20 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
               <p>Loading recipes...</p>
             </div>
           ) : (
-            <HierarchicalResultsTree query={searchQuery} />
+            <>
+              <AdvancedSearchFilters
+                filters={searchFilters}
+                onFiltersChange={setSearchFilters}
+                availableTags={tags}
+                isOpen={filtersOpen}
+                onToggle={() => setFiltersOpen(!filtersOpen)}
+                onReset={handleFiltersReset}
+              />
+              <HierarchicalResultsTree 
+                query={searchQuery} 
+                filters={searchFilters}
+              />
+            </>
           )
         ) : (
           <EmptySearchState onSearchFocus={() => setSearchFocused(true)} />

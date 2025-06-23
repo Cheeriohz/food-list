@@ -4,9 +4,13 @@ import { TreeNode } from '../services/TreeDataService';
 import { Recipe } from '../types';
 import VirtualScrollTree from './VirtualScrollTree';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
+import { useDragAndDrop } from '../hooks/useDragAndDrop';
+import RecipeComparison from './RecipeComparison';
+import { SearchFilters } from './AdvancedSearchFilters';
 
 interface HierarchicalResultsTreeProps {
   query: string;
+  filters?: SearchFilters;
 }
 
 interface TreeNodeComponentProps {
@@ -16,6 +20,18 @@ interface TreeNodeComponentProps {
   onRecipeSelect?: (recipe: Recipe) => void;
   isVisible: boolean;
   isFocused?: boolean;
+  isDragging?: boolean;
+  isDropTarget?: boolean;
+  dropIndicator?: 'before' | 'after' | 'inside' | null;
+  onDragStart?: (node: TreeNode, event: React.DragEvent) => void;
+  onDragOver?: (node: TreeNode, event: React.DragEvent) => void;
+  onDragEnter?: (node: TreeNode, event: React.DragEvent) => void;
+  onDragLeave?: (event: React.DragEvent) => void;
+  onDrop?: (node: TreeNode, event: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  isComparisonMode?: boolean;
+  onAddToComparison?: (recipe: Recipe) => void;
+  isInComparison?: boolean;
 }
 
 // Individual tree node component
@@ -25,7 +41,19 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
   onToggleExpansion, 
   onRecipeSelect,
   isVisible,
-  isFocused = false
+  isFocused = false,
+  isDragging = false,
+  isDropTarget = false,
+  dropIndicator = null,
+  onDragStart,
+  onDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  isComparisonMode = false,
+  onAddToComparison,
+  isInComparison = false
 }) => {
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   
@@ -58,6 +86,11 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
     if (node.type === 'recipe') className += ' recipe-node';
     if (node.matchScore > 0) className += ' highlighted';
     if (isFocused) className += ' focused';
+    if (isDragging) className += ' dragging';
+    if (isDropTarget) className += ' drop-target';
+    if (dropIndicator) className += ` drop-${dropIndicator}`;
+    if (isComparisonMode) className += ' comparison-mode';
+    if (isInComparison) className += ' in-comparison';
     return className;
   };
 
@@ -137,12 +170,25 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
 
   return (
     <div className="tree-node-container">
+      {dropIndicator === 'before' && (
+        <div className="drop-indicator drop-before">
+          <div className="drop-line"></div>
+        </div>
+      )}
+      
       <div 
         className={getNodeClass()}
         style={{ paddingLeft: `${level * 1.5}rem` }}
         onClick={handleNodeClick}
         data-node-id={node.id}
         tabIndex={isFocused ? 0 : -1}
+        draggable={node.type === 'tag'}
+        onDragStart={(e) => onDragStart?.(node, e)}
+        onDragOver={(e) => onDragOver?.(node, e)}
+        onDragEnter={(e) => onDragEnter?.(node, e)}
+        onDragLeave={onDragLeave}
+        onDrop={(e) => onDrop?.(node, e)}
+        onDragEnd={onDragEnd}
       >
         <span className="node-icon">{getNodeIcon()}</span>
         <span className="node-name">{node.name}</span>
@@ -185,17 +231,45 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
         )}
 
         {node.type === 'recipe' && (
-          <button 
-            className="recipe-expand-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsRecipeExpanded(!isRecipeExpanded);
-            }}
-          >
-            {isRecipeExpanded ? '▲' : '▼'}
-          </button>
+          <div className="recipe-actions">
+            {isComparisonMode && (
+              <button
+                className={`compare-button ${isInComparison ? 'in-comparison' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (node.recipeData && onAddToComparison) {
+                    onAddToComparison(node.recipeData);
+                  }
+                }}
+                title={isInComparison ? 'Remove from comparison' : 'Add to comparison'}
+              >
+                {isInComparison ? '✓' : '+'}
+              </button>
+            )}
+            <button 
+              className="recipe-expand-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsRecipeExpanded(!isRecipeExpanded);
+              }}
+            >
+              {isRecipeExpanded ? '▲' : '▼'}
+            </button>
+          </div>
         )}
       </div>
+
+      {dropIndicator === 'after' && (
+        <div className="drop-indicator drop-after">
+          <div className="drop-line"></div>
+        </div>
+      )}
+
+      {dropIndicator === 'inside' && (
+        <div className="drop-indicator drop-inside">
+          <div className="drop-highlight">Drop inside to make child</div>
+        </div>
+      )}
 
       {renderRecipeDetails()}
 
@@ -210,6 +284,15 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
               onRecipeSelect={onRecipeSelect}
               isVisible={child.visible}
               isFocused={false}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDragEnter={onDragEnter}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              isComparisonMode={isComparisonMode}
+              onAddToComparison={onAddToComparison}
+              isInComparison={false}
             />
           ))}
         </div>
@@ -218,7 +301,7 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
   );
 };
 
-const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query }) => {
+const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query, filters }) => {
   const { 
     tree, 
     searchResults, 
@@ -230,9 +313,141 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
   const [keyboardNavigationEnabled, setKeyboardNavigationEnabled] = useState(true);
+  const [dragDropEnabled, setDragDropEnabled] = useState(true);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [comparisonRecipes, setComparisonRecipes] = useState<Recipe[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
   const treeContainerRef = useRef<HTMLDivElement>(null);
 
-  const visibleNodes = tree.filter(node => node.visible);
+  // Apply filters and sorting to visible nodes
+  const applyFiltersAndSorting = useCallback((nodes: TreeNode[]): TreeNode[] => {
+    if (!filters) return nodes.filter(node => node.visible);
+
+    let filteredNodes = nodes.filter(node => {
+      if (!node.visible) return false;
+      
+      // Only apply filters to recipe nodes
+      if (node.type === 'recipe' && node.recipeData) {
+        const recipe = node.recipeData;
+        
+        // Tag filters
+        if (filters.tags.length > 0) {
+          const recipeTags = recipe.tags?.map(tag => tag.name) || [];
+          const hasMatchingTag = filters.tags.some(filterTag => 
+            recipeTags.includes(filterTag)
+          );
+          if (!hasMatchingTag) return false;
+        }
+        
+        // Time filters
+        if (recipe.prep_time !== undefined) {
+          if (recipe.prep_time < filters.prepTimeRange[0] || 
+              recipe.prep_time > filters.prepTimeRange[1]) {
+            return false;
+          }
+        }
+        
+        if (recipe.cook_time !== undefined) {
+          if (recipe.cook_time < filters.cookTimeRange[0] || 
+              recipe.cook_time > filters.cookTimeRange[1]) {
+            return false;
+          }
+        }
+        
+        // Servings filter
+        if (recipe.servings !== undefined) {
+          if (recipe.servings < filters.servingsRange[0] || 
+              recipe.servings > filters.servingsRange[1]) {
+            return false;
+          }
+        }
+        
+        // Ingredients count filter
+        if (filters.minIngredients !== null || filters.maxIngredients !== null) {
+          const ingredientsCount = recipe.ingredients 
+            ? recipe.ingredients.split('\n').filter(i => i.trim()).length 
+            : 0;
+          
+          if (filters.minIngredients !== null && ingredientsCount < filters.minIngredients) {
+            return false;
+          }
+          
+          if (filters.maxIngredients !== null && ingredientsCount > filters.maxIngredients) {
+            return false;
+          }
+        }
+        
+        // Description filter
+        if (filters.hasDescription === true && !recipe.description) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+
+    // Apply sorting to recipe nodes
+    if (filters.sortBy !== 'relevance') {
+      filteredNodes = filteredNodes.map(node => {
+        if (node.type === 'tag' && node.children) {
+          // Sort children recursively
+          const sortedChildren = applyFiltersAndSorting(node.children);
+          return { ...node, children: sortedChildren };
+        }
+        return node;
+      });
+
+      // Sort recipe nodes
+      const recipeNodes = filteredNodes.filter(node => node.type === 'recipe');
+      const tagNodes = filteredNodes.filter(node => node.type === 'tag');
+      
+      recipeNodes.sort((a, b) => {
+        if (!a.recipeData || !b.recipeData) return 0;
+        
+        let aValue: any, bValue: any;
+        
+        switch (filters.sortBy) {
+          case 'title':
+            aValue = a.recipeData.title.toLowerCase();
+            bValue = b.recipeData.title.toLowerCase();
+            break;
+          case 'prep_time':
+            aValue = a.recipeData.prep_time || 0;
+            bValue = b.recipeData.prep_time || 0;
+            break;
+          case 'cook_time':
+            aValue = a.recipeData.cook_time || 0;
+            bValue = b.recipeData.cook_time || 0;
+            break;
+          case 'total_time':
+            aValue = (a.recipeData.prep_time || 0) + (a.recipeData.cook_time || 0);
+            bValue = (b.recipeData.prep_time || 0) + (b.recipeData.cook_time || 0);
+            break;
+          case 'servings':
+            aValue = a.recipeData.servings || 0;
+            bValue = b.recipeData.servings || 0;
+            break;
+          case 'created_at':
+            // TreeNode recipeData doesn't include created_at, use ID as fallback
+            aValue = a.recipeData.id || 0;
+            bValue = b.recipeData.id || 0;
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aValue < bValue) return filters.sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return filters.sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+      
+      filteredNodes = [...tagNodes, ...recipeNodes];
+    }
+
+    return filteredNodes;
+  }, [filters]);
+
+  const visibleNodes = applyFiltersAndSorting(tree);
 
   // Keyboard navigation
   const {
@@ -249,6 +464,73 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     },
     isEnabled: keyboardNavigationEnabled && !useVirtualScrolling
   });
+
+  // Drag and drop functionality
+  const handleMoveNode = useCallback((draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after' | 'inside') => {
+    // TODO: Implement actual tag reorganization API call
+    console.log(`Moving ${draggedNode.name} ${position} ${targetNode.name}`);
+    
+    // For now, just show a notification
+    // In a real implementation, this would call an API to reorganize tags
+  }, []);
+
+  const canDrop = useCallback((draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after' | 'inside') => {
+    // Prevent dropping on self
+    if (draggedNode.id === targetNode.id) return false;
+    
+    // Only allow dropping on tag nodes or as siblings
+    if (position === 'inside' && targetNode.type === 'recipe') return false;
+    
+    // Prevent circular references (dropping parent into child)
+    // This would need more sophisticated checking in a real implementation
+    return true;
+  }, []);
+
+  const {
+    dragState,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnter,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd,
+    isDraggedNode,
+    isDropTarget,
+    getDropIndicator
+  } = useDragAndDrop({
+    onMoveNode: handleMoveNode,
+    canDrop,
+    isEnabled: dragDropEnabled && !useVirtualScrolling
+  });
+
+  // Recipe comparison functions
+  const handleAddToComparison = useCallback((recipe: Recipe) => {
+    setComparisonRecipes(prev => {
+      const isAlreadyInComparison = prev.some(r => r.id === recipe.id);
+      if (isAlreadyInComparison) {
+        return prev.filter(r => r.id !== recipe.id);
+      } else {
+        return [...prev, recipe];
+      }
+    });
+  }, []);
+
+  const handleRemoveFromComparison = useCallback((recipeId: string | number) => {
+    setComparisonRecipes(prev => prev.filter(r => r.id?.toString() !== recipeId.toString()));
+  }, []);
+
+  const toggleComparisonMode = useCallback(() => {
+    setComparisonMode(prev => !prev);
+    if (comparisonMode) {
+      setComparisonRecipes([]);
+    }
+  }, [comparisonMode]);
+
+  const openComparison = useCallback(() => {
+    if (comparisonRecipes.length > 1) {
+      setShowComparison(true);
+    }
+  }, [comparisonRecipes.length]);
 
   // Auto-scroll to top when search changes
   useEffect(() => {
@@ -358,6 +640,24 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
           📁 Collapse All
         </button>
 
+        <button
+          className={`control-button comparison-toggle ${comparisonMode ? 'active' : ''}`}
+          onClick={toggleComparisonMode}
+        >
+          ⚖️ Compare
+        </button>
+
+        {comparisonMode && comparisonRecipes.length > 0 && (
+          <button
+            className="control-button comparison-count"
+            onClick={openComparison}
+            disabled={comparisonRecipes.length < 2}
+            title={`Compare ${comparisonRecipes.length} recipe${comparisonRecipes.length === 1 ? '' : 's'}`}
+          >
+            📊 Compare ({comparisonRecipes.length})
+          </button>
+        )}
+
         {query && (
           <div className="search-summary">
             Showing results matching "{query}"
@@ -373,6 +673,18 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
         {keyboardNavigationEnabled && !useVirtualScrolling && (
           <div className="keyboard-nav-indicator">
             ⌨️ Use arrow keys to navigate • Enter to select • Space to expand
+          </div>
+        )}
+
+        {dragDropEnabled && !useVirtualScrolling && (
+          <div className="drag-drop-indicator">
+            🖱️ Drag tags to reorganize hierarchy
+          </div>
+        )}
+
+        {dragState.isDragging && (
+          <div className="dragging-indicator">
+            🚚 Dragging: {dragState.draggedNode?.name}
           </div>
         )}
       </div>
@@ -406,6 +718,18 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
                 onRecipeSelect={setSelectedRecipe}
                 isVisible={node.visible}
                 isFocused={focusedNodeId === node.id}
+                isDragging={isDraggedNode(node)}
+                isDropTarget={isDropTarget(node)}
+                dropIndicator={getDropIndicator(node)}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                isComparisonMode={comparisonMode}
+                onAddToComparison={handleAddToComparison}
+                isInComparison={comparisonRecipes.some(r => r.id?.toString() === node.recipeData?.id?.toString())}
               />
             ))}
           </div>
@@ -431,6 +755,15 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
             </div>
           </div>
         </div>
+      )}
+
+      {/* Recipe comparison modal */}
+      {showComparison && comparisonRecipes.length > 1 && (
+        <RecipeComparison
+          recipes={comparisonRecipes}
+          onClose={() => setShowComparison(false)}
+          onRemoveRecipe={handleRemoveFromComparison}
+        />
       )}
 
       <style>{`
@@ -539,6 +872,27 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
           border-color: rgba(52, 152, 219, 0.3);
         }
 
+        .control-button.comparison-toggle.active {
+          background: rgba(156, 39, 176, 0.2);
+          border-color: rgba(156, 39, 176, 0.4);
+          color: #9c27b0;
+        }
+
+        .control-button.comparison-count {
+          background: rgba(33, 150, 243, 0.1);
+          border-color: rgba(33, 150, 243, 0.3);
+          color: #2196f3;
+        }
+
+        .control-button.comparison-count:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .control-button.comparison-count:not(:disabled):hover {
+          background: rgba(33, 150, 243, 0.2);
+        }
+
         .search-summary {
           color: #666;
           font-style: italic;
@@ -563,6 +917,32 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
           border-radius: 20px;
           font-size: 0.8rem;
           font-weight: 500;
+        }
+
+        .drag-drop-indicator {
+          background: rgba(255, 152, 0, 0.1);
+          border: 1px solid rgba(255, 152, 0, 0.2);
+          color: #ff9800;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
+        .dragging-indicator {
+          background: rgba(33, 150, 243, 0.1);
+          border: 1px solid rgba(33, 150, 243, 0.2);
+          color: #2196f3;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 500;
+          animation: pulse-drag 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse-drag {
+          from { opacity: 0.7; }
+          to { opacity: 1; }
         }
 
         .tree-container {
@@ -624,6 +1004,80 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
         .tree-node.focused.highlighted {
           background: rgba(255, 235, 59, 0.3);
           border: 2px solid #ff9800;
+        }
+
+        .tree-node.dragging {
+          opacity: 0.5;
+          background: rgba(33, 150, 243, 0.1);
+          border: 2px dashed #2196f3;
+          cursor: grabbing;
+        }
+
+        .tree-node.drop-target {
+          background: rgba(76, 175, 80, 0.1);
+        }
+
+        .tree-node.drop-before {
+          border-top: 3px solid #4caf50;
+        }
+
+        .tree-node.drop-after {
+          border-bottom: 3px solid #4caf50;
+        }
+
+        .tree-node.drop-inside {
+          background: rgba(76, 175, 80, 0.2);
+          border: 2px solid #4caf50;
+        }
+
+        .tree-node[draggable="true"] {
+          cursor: grab;
+        }
+
+        .tree-node[draggable="true"]:hover {
+          background: rgba(33, 150, 243, 0.05);
+        }
+
+        .drop-indicator {
+          position: relative;
+          height: 0;
+        }
+
+        .drop-line {
+          height: 2px;
+          background: #4caf50;
+          border-radius: 1px;
+          position: relative;
+        }
+
+        .drop-line::before,
+        .drop-line::after {
+          content: '';
+          position: absolute;
+          top: -3px;
+          width: 6px;
+          height: 6px;
+          background: #4caf50;
+          border-radius: 50%;
+        }
+
+        .drop-line::before {
+          left: -3px;
+        }
+
+        .drop-line::after {
+          right: -3px;
+        }
+
+        .drop-highlight {
+          background: rgba(76, 175, 80, 0.1);
+          border: 1px dashed #4caf50;
+          color: #4caf50;
+          padding: 0.5rem;
+          text-align: center;
+          font-size: 0.8rem;
+          border-radius: 4px;
+          margin: 0.25rem 0;
         }
 
         .node-icon {
@@ -692,6 +1146,48 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
         .expand-button:hover, .recipe-expand-button:hover {
           background: rgba(0, 0, 0, 0.05);
           color: #333;
+        }
+
+        .recipe-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .compare-button {
+          background: rgba(156, 39, 176, 0.1);
+          border: 1px solid rgba(156, 39, 176, 0.3);
+          color: #9c27b0;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.8rem;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .compare-button:hover {
+          background: rgba(156, 39, 176, 0.2);
+          border-color: rgba(156, 39, 176, 0.5);
+        }
+
+        .compare-button.in-comparison {
+          background: #9c27b0;
+          color: white;
+          border-color: #9c27b0;
+        }
+
+        .tree-node.comparison-mode.recipe-node:hover {
+          background: rgba(156, 39, 176, 0.05);
+        }
+
+        .tree-node.in-comparison {
+          background: rgba(156, 39, 176, 0.1);
+          border-left: 3px solid #9c27b0;
         }
 
         .tree-children {
