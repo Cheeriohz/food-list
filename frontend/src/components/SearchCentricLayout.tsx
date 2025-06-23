@@ -147,12 +147,12 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
       <main className="search-content">
         {shouldShowResults ? (
           loading ? (
-            <div className="loading-state">
+            <div className="loading-state fade-in">
               <div className="loading-spinner">🔍</div>
               <p>Loading recipes...</p>
             </div>
           ) : (
-            <>
+            <div className="results-container fade-in">
               <AdvancedSearchFilters
                 filters={searchFilters}
                 onFiltersChange={setSearchFilters}
@@ -165,7 +165,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
                 query={searchQuery} 
                 filters={searchFilters}
               />
-            </>
+            </div>
           )
         ) : (
           <EmptySearchState onSearchFocus={() => setSearchFocused(true)} />
@@ -280,6 +280,27 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
           padding: 2rem;
           width: 100%;
           box-sizing: border-box;
+          position: relative;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .results-container {
+          width: 100%;
+        }
+
+        .fade-in {
+          animation: fadeInSlide 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeInSlide {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .loading-state {
