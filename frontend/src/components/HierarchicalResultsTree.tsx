@@ -3,6 +3,7 @@ import { useUnifiedData } from '../contexts/UnifiedDataContext';
 import { TreeNode } from '../services/TreeDataService';
 import { Recipe } from '../types';
 import VirtualScrollTree from './VirtualScrollTree';
+import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 
 interface HierarchicalResultsTreeProps {
   query: string;
@@ -14,6 +15,7 @@ interface TreeNodeComponentProps {
   onToggleExpansion: (nodeId: string) => void;
   onRecipeSelect?: (recipe: Recipe) => void;
   isVisible: boolean;
+  isFocused?: boolean;
 }
 
 // Individual tree node component
@@ -22,7 +24,8 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
   level, 
   onToggleExpansion, 
   onRecipeSelect,
-  isVisible 
+  isVisible,
+  isFocused = false
 }) => {
   const [isRecipeExpanded, setIsRecipeExpanded] = useState(false);
   
@@ -54,6 +57,7 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
     if (node.type === 'tag') className += ' tag-node';
     if (node.type === 'recipe') className += ' recipe-node';
     if (node.matchScore > 0) className += ' highlighted';
+    if (isFocused) className += ' focused';
     return className;
   };
 
@@ -137,6 +141,8 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
         className={getNodeClass()}
         style={{ paddingLeft: `${level * 1.5}rem` }}
         onClick={handleNodeClick}
+        data-node-id={node.id}
+        tabIndex={isFocused ? 0 : -1}
       >
         <span className="node-icon">{getNodeIcon()}</span>
         <span className="node-name">{node.name}</span>
@@ -203,6 +209,7 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({
               onToggleExpansion={onToggleExpansion}
               onRecipeSelect={onRecipeSelect}
               isVisible={child.visible}
+              isFocused={false}
             />
           ))}
         </div>
@@ -222,7 +229,26 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
+  const [keyboardNavigationEnabled, setKeyboardNavigationEnabled] = useState(true);
   const treeContainerRef = useRef<HTMLDivElement>(null);
+
+  const visibleNodes = tree.filter(node => node.visible);
+
+  // Keyboard navigation
+  const {
+    focusedNodeId,
+    initializeFocus,
+    navigateToIndex
+  } = useKeyboardNavigation({
+    nodes: visibleNodes,
+    onToggleExpansion: toggleNodeExpansion,
+    onSelectNode: (node) => {
+      if (node.type === 'recipe' && node.recipeData) {
+        setSelectedRecipe(node.recipeData);
+      }
+    },
+    isEnabled: keyboardNavigationEnabled && !useVirtualScrolling
+  });
 
   // Auto-scroll to top when search changes
   useEffect(() => {
@@ -236,6 +262,16 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     const totalNodes = tree.filter(node => node.visible).length;
     setUseVirtualScrolling(totalNodes > 50); // Enable virtual scrolling for 50+ items
   }, [tree]);
+
+  // Initialize keyboard focus when nodes are available
+  useEffect(() => {
+    if (visibleNodes.length > 0 && keyboardNavigationEnabled && !useVirtualScrolling) {
+      const timer = setTimeout(() => {
+        initializeFocus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [visibleNodes.length, keyboardNavigationEnabled, useVirtualScrolling, initializeFocus]);
 
   if (loading) {
     return (
@@ -262,8 +298,6 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     );
   }
 
-  const visibleNodes = tree.filter(node => node.visible);
-
   // Render function for virtual scrolling
   const renderVirtualNode = useCallback((node: TreeNode, level: number, index: number) => {
     return (
@@ -274,6 +308,7 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
         onToggleExpansion={toggleNodeExpansion}
         onRecipeSelect={setSelectedRecipe}
         isVisible={node.visible}
+        isFocused={false} // Virtual scrolling disables keyboard nav
       />
     );
   }, [toggleNodeExpansion]);
@@ -334,6 +369,12 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
             ⚡ Virtual scrolling enabled for optimal performance
           </div>
         )}
+
+        {keyboardNavigationEnabled && !useVirtualScrolling && (
+          <div className="keyboard-nav-indicator">
+            ⌨️ Use arrow keys to navigate • Enter to select • Space to expand
+          </div>
+        )}
       </div>
 
       <div 
@@ -364,6 +405,7 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
                 onToggleExpansion={toggleNodeExpansion}
                 onRecipeSelect={setSelectedRecipe}
                 isVisible={node.visible}
+                isFocused={focusedNodeId === node.id}
               />
             ))}
           </div>
@@ -513,6 +555,16 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
           font-weight: 500;
         }
 
+        .keyboard-nav-indicator {
+          background: rgba(76, 175, 80, 0.1);
+          border: 1px solid rgba(76, 175, 80, 0.2);
+          color: #4caf50;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
         .tree-container {
           background: white;
           border-radius: 12px;
@@ -561,6 +613,17 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
         .tree-node.highlighted {
           background: rgba(255, 235, 59, 0.2);
           border-left: 3px solid #ffc107;
+        }
+
+        .tree-node.focused {
+          background: rgba(33, 150, 243, 0.1);
+          border: 2px solid #2196f3;
+          outline: none;
+        }
+
+        .tree-node.focused.highlighted {
+          background: rgba(255, 235, 59, 0.3);
+          border: 2px solid #ff9800;
         }
 
         .node-icon {
