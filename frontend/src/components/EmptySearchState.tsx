@@ -2,9 +2,11 @@ import React from 'react';
 
 interface EmptySearchStateProps {
   onSearchFocus?: () => void;
+  onCreateRecipe?: () => void;
+  onManageTags?: () => void;
 }
 
-const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) => {
+const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus, onCreateRecipe, onManageTags }) => {
 
 
   return (
@@ -15,13 +17,33 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
         <p className="hero-description">
           Search through our collection of delicious recipes by ingredient, cuisine, or dish name
         </p>
-        <button 
-          className="start-searching-button"
-          onClick={onSearchFocus}
-        >
-          <span className="button-icon">🔍</span>
-          Start Searching
-        </button>
+        <div className="action-buttons">
+          <button 
+            className="primary-action-button"
+            onClick={onSearchFocus}
+          >
+            <span className="button-icon">🔍</span>
+            Start Searching
+          </button>
+          
+          <div className="secondary-actions">
+            <button 
+              className="secondary-action-button"
+              onClick={onCreateRecipe}
+            >
+              <span className="button-icon">➕</span>
+              Add Recipe
+            </button>
+            
+            <button 
+              className="secondary-action-button"
+              onClick={onManageTags}
+            >
+              <span className="button-icon">🏷️</span>
+              Manage Tags
+            </button>
+          </div>
+        </div>
       </div>
 
 
@@ -94,7 +116,14 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
           font-weight: 400;
         }
 
-        .start-searching-button {
+        .action-buttons {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+        }
+
+        .primary-action-button {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           border: none;
@@ -112,7 +141,7 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
           overflow: hidden;
         }
 
-        .start-searching-button::before {
+        .primary-action-button::before {
           content: '';
           position: absolute;
           top: 0;
@@ -123,17 +152,53 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
           transition: left 0.5s;
         }
 
-        .start-searching-button:hover {
+        .primary-action-button:hover {
           transform: translateY(-3px);
           box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
         }
 
-        .start-searching-button:hover::before {
+        .primary-action-button:hover::before {
           left: 100%;
         }
 
-        .start-searching-button:active {
+        .primary-action-button:active {
           transform: translateY(-1px);
+        }
+
+        .secondary-actions {
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .secondary-action-button {
+          background: rgba(255, 255, 255, 0.9);
+          color: #5a6c7d;
+          border: 2px solid rgba(102, 126, 234, 0.2);
+          padding: 0.875rem 1.5rem;
+          border-radius: 30px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          backdrop-filter: blur(10px);
+        }
+
+        .secondary-action-button:hover {
+          background: rgba(102, 126, 234, 0.1);
+          border-color: rgba(102, 126, 234, 0.4);
+          color: #667eea;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .secondary-action-button:active {
+          transform: translateY(0);
         }
 
         .button-icon {
@@ -162,9 +227,14 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
             font-size: 4rem;
           }
 
-          .start-searching-button {
+          .primary-action-button {
             padding: 1rem 2rem;
             font-size: 1.1rem;
+          }
+
+          .secondary-action-button {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
           }
         }
 
@@ -186,9 +256,20 @@ const EmptySearchState: React.FC<EmptySearchStateProps> = ({ onSearchFocus }) =>
             font-size: 1rem;
           }
 
-          .start-searching-button {
+          .primary-action-button {
             padding: 0.875rem 1.75rem;
             font-size: 1rem;
+          }
+
+          .secondary-actions {
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+
+          .secondary-action-button {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.9rem;
+            width: 200px;
           }
 
           .button-icon {

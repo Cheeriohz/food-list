@@ -42,7 +42,10 @@ function AppContent() {
   };
 
   return (
-    <SearchCentricLayout>
+    <SearchCentricLayout
+      onCreateRecipe={handleCreateRecipe}
+      onManageTags={handleManageTags}
+    >
       {viewMode === 'detail' && selectedRecipeId ? (
         <RecipeDetail
           recipeId={selectedRecipeId}

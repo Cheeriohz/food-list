@@ -8,9 +8,12 @@ import { useTags } from '../contexts/TagContext';
 
 interface SearchCentricLayoutProps {
   children?: React.ReactNode;
+  onCreateRecipe?: () => void;
+  onManageTags?: () => void;
+  showEmptyState?: boolean;
 }
 
-const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) => {
+const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onCreateRecipe, onManageTags, showEmptyState = true }) => {
   const {
     searchQuery,
     showResults,
@@ -145,7 +148,11 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
 
       {/* Main content area */}
       <main className="search-content">
-        {shouldShowResults ? (
+        {children ? (
+          <div className="form-container fade-in">
+            {children}
+          </div>
+        ) : shouldShowResults ? (
           loading ? (
             <div className="loading-state fade-in">
               <div className="loading-spinner">🔍</div>
@@ -167,13 +174,16 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children }) =
               />
             </div>
           )
-        ) : (
-          <EmptySearchState onSearchFocus={() => setSearchFocused(true)} />
-        )}
+        ) : showEmptyState ? (
+          <EmptySearchState 
+            onSearchFocus={() => setSearchFocused(true)}
+            onCreateRecipe={onCreateRecipe}
+            onManageTags={onManageTags}
+          />
+        ) : null}
       </main>
 
       {/* Additional content (for future features) */}
-      {children}
 
       <style>{`
         .search-centric-layout {
