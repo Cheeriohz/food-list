@@ -102,7 +102,10 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
     return (
       <div className="filters-toggle">
         <button className="toggle-button" onClick={onToggle}>
-          🔧 Advanced Filters
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          Advanced Filters
           {(filters.tags.length > 0 || 
             filters.prepTimeRange[0] > 0 || filters.prepTimeRange[1] < 180 ||
             filters.cookTimeRange[0] > 0 || filters.cookTimeRange[1] < 240 ||
@@ -111,7 +114,11 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
             filters.hasDescription !== null ||
             filters.minIngredients !== null ||
             filters.maxIngredients !== null) && (
-            <span className="active-indicator">●</span>
+            <span className="active-indicator">
+              <svg width="8" height="8" viewBox="0 0 8 8">
+                <circle cx="4" cy="4" r="4" fill="#ff6b6b"/>
+              </svg>
+            </span>
           )}
         </button>
       </div>
@@ -294,13 +301,13 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         }
 
         .toggle-button {
-          background: rgba(52, 152, 219, 0.1);
-          border: 1px solid rgba(52, 152, 219, 0.2);
-          color: #3498db;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
+          background: rgba(108, 117, 125, 0.08);
+          border: 1px solid rgba(108, 117, 125, 0.2);
+          color: #6c757d;
+          padding: 0.5rem 0.75rem;
+          border-radius: 6px;
           cursor: pointer;
-          font-size: 0.875rem;
+          font-size: 0.8rem;
           font-weight: 500;
           transition: all 0.2s ease;
           display: flex;
@@ -309,36 +316,89 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         }
 
         .toggle-button:hover {
-          background: rgba(52, 152, 219, 0.2);
-          border-color: rgba(52, 152, 219, 0.3);
+          background: rgba(108, 117, 125, 0.12);
+          border-color: rgba(108, 117, 125, 0.3);
         }
 
         .active-indicator {
-          color: #e74c3c;
-          font-size: 0.6rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.1);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
 
         .advanced-filters {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 20px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 32px rgba(0, 0, 0, 0.08);
           margin-bottom: 1.5rem;
           overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          position: relative;
+        }
+
+        .advanced-filters::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent);
         }
 
         .filters-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 1rem 1.5rem;
-          background: #f8f9fa;
-          border-bottom: 1px solid #e9ecef;
+          padding: 1.5rem 2rem;
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          border-bottom: 1px solid rgba(233, 236, 239, 0.8);
+          position: relative;
+        }
+
+        .filters-header::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 2rem;
+          right: 2rem;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
         }
 
         .filters-header h3 {
           margin: 0;
           color: #2c3e50;
-          font-size: 1.1rem;
+          font-size: 1.25rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .filters-header h3::before {
+          content: '';
+          width: 4px;
+          height: 24px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 2px;
         }
 
         .header-actions {
@@ -347,52 +407,89 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         }
 
         .reset-button {
-          background: #e74c3c;
+          background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
           color: white;
           border: none;
-          padding: 0.25rem 0.75rem;
-          border-radius: 15px;
+          padding: 0.5rem 1rem;
+          border-radius: 10px;
           font-size: 0.8rem;
+          font-weight: 600;
           cursor: pointer;
-          transition: background 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
         }
 
         .reset-button:hover {
-          background: #c0392b;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        .reset-button:active {
+          transform: translateY(0);
         }
 
         .close-button {
-          background: none;
-          border: none;
-          color: #666;
-          font-size: 1.2rem;
+          background: rgba(102, 126, 234, 0.1);
+          border: 1px solid rgba(102, 126, 234, 0.2);
+          color: #667eea;
+          font-size: 1.1rem;
           cursor: pointer;
-          padding: 0.25rem;
-          border-radius: 4px;
-          transition: all 0.2s ease;
+          padding: 0.5rem;
+          border-radius: 8px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .close-button:hover {
-          background: rgba(0, 0, 0, 0.05);
-          color: #333;
+          background: rgba(102, 126, 234, 0.2);
+          color: #5a67d8;
+          transform: rotate(90deg);
         }
 
         .filters-content {
-          padding: 1.5rem;
+          padding: 2rem;
           display: grid;
-          gap: 1.5rem;
+          gap: 2rem;
+          background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(255, 255, 255, 0.9) 100%);
         }
 
         .filter-group {
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
+          gap: 1rem;
+          background: white;
+          padding: 1.5rem;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+        }
+
+        .filter-group:hover {
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+          transform: translateY(-2px);
         }
 
         .filter-label {
-          font-weight: 600;
+          font-weight: 700;
           color: #2c3e50;
-          font-size: 0.9rem;
+          font-size: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .filter-label::before {
+          content: '';
+          width: 3px;
+          height: 16px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 2px;
         }
 
         .tag-filter-container {
@@ -404,146 +501,214 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         .selected-tags {
           display: flex;
           flex-wrap: wrap;
-          gap: 0.5rem;
-          min-height: 2rem;
-          padding: 0.5rem;
-          border: 1px solid #e9ecef;
-          border-radius: 6px;
-          background: #f8f9fa;
+          gap: 0.75rem;
+          min-height: 3rem;
+          padding: 1rem;
+          border: 2px solid rgba(102, 126, 234, 0.2);
+          border-radius: 12px;
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
+          transition: all 0.3s ease;
+        }
+
+        .selected-tags:hover {
+          border-color: rgba(102, 126, 234, 0.3);
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(255, 255, 255, 0.9) 100%);
         }
 
         .selected-tag {
-          background: #3498db;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
-          padding: 0.25rem 0.5rem;
-          border-radius: 12px;
-          font-size: 0.8rem;
+          padding: 0.5rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 600;
           display: flex;
           align-items: center;
-          gap: 0.25rem;
+          gap: 0.5rem;
+          box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+          transition: all 0.3s ease;
+        }
+
+        .selected-tag:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .remove-tag {
-          background: none;
+          background: rgba(255, 255, 255, 0.2);
           border: none;
           color: white;
           font-size: 0.7rem;
           cursor: pointer;
           padding: 0;
-          width: 14px;
-          height: 14px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-
-        .remove-tag:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-
-        .expand-tags-button {
-          background: #f8f9fa;
-          border: 1px solid #e9ecef;
-          color: #666;
-          padding: 0.5rem;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 0.8rem;
           transition: all 0.2s ease;
         }
 
+        .remove-tag:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(1.1);
+        }
+
+        .expand-tags-button {
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+          border: 2px solid rgba(102, 126, 234, 0.2);
+          color: #667eea;
+          padding: 0.75rem 1rem;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 0.85rem;
+          font-weight: 600;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         .expand-tags-button:hover {
-          background: #e9ecef;
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+          border-color: rgba(102, 126, 234, 0.3);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
         }
 
         .available-tags {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 0.5rem;
-          max-height: 200px;
+          gap: 0.75rem;
+          max-height: 250px;
           overflow-y: auto;
-          border: 1px solid #e9ecef;
-          border-radius: 6px;
-          padding: 1rem;
-          background: #fafafa;
+          border: 2px solid rgba(102, 126, 234, 0.1);
+          border-radius: 12px;
+          padding: 1.5rem;
+          background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(255, 255, 255, 0.9) 100());
+          backdrop-filter: blur(10px);
+        }
+
+        .available-tags::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .available-tags::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 3px;
+        }
+
+        .available-tags::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 3px;
         }
 
         .tag-checkbox {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.75rem;
           cursor: pointer;
-          font-size: 0.85rem;
+          font-size: 0.9rem;
+          padding: 0.5rem;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .tag-checkbox:hover {
+          background: rgba(102, 126, 234, 0.1);
         }
 
         .tag-checkbox input {
           margin: 0;
+          width: 16px;
+          height: 16px;
+          accent-color: #667eea;
         }
 
         .range-slider-container {
           position: relative;
-          height: 20px;
-          margin: 0.5rem 0;
+          height: 24px;
+          margin: 1rem 0;
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100());
+          border-radius: 12px;
+          padding: 2px;
         }
 
         .range-slider {
           position: absolute;
           width: 100%;
-          height: 5px;
-          border-radius: 5px;
-          background: #e9ecef;
+          height: 8px;
+          border-radius: 6px;
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
           outline: none;
           -webkit-appearance: none;
           appearance: none;
+          cursor: pointer;
         }
 
         .range-slider::-webkit-slider-thumb {
           appearance: none;
           -webkit-appearance: none;
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
-          background: #3498db;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          border: 3px solid white;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          transition: all 0.3s ease;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
 
         .range-slider::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
-          background: #3498db;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100());
           cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          border: 3px solid white;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .range-labels {
           display: flex;
           justify-content: space-between;
-          font-size: 0.8rem;
-          color: #666;
+          font-size: 0.85rem;
+          color: #667eea;
+          font-weight: 600;
+          margin-top: 0.5rem;
         }
 
         .number-inputs {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 1rem;
+        }
+
+        .number-inputs span {
+          color: #667eea;
+          font-weight: 600;
+          font-size: 0.9rem;
         }
 
         .number-input {
-          width: 80px;
-          padding: 0.5rem;
-          border: 1px solid #e9ecef;
-          border-radius: 6px;
+          width: 90px;
+          padding: 0.75rem;
+          border: 2px solid rgba(102, 126, 234, 0.2);
+          border-radius: 10px;
           font-size: 0.9rem;
+          font-weight: 600;
+          background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(255, 255, 255, 0.9) 100());
+          transition: all 0.3s ease;
         }
 
         .number-input:focus {
           outline: none;
-          border-color: #3498db;
+          border-color: rgba(102, 126, 234, 0.5);
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          transform: translateY(-1px);
         }
 
         .checkbox-group {
@@ -555,13 +720,24 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         .checkbox-item {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.75rem;
           cursor: pointer;
           font-size: 0.9rem;
+          font-weight: 600;
+          padding: 0.5rem;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .checkbox-item:hover {
+          background: rgba(102, 126, 234, 0.1);
         }
 
         .checkbox-item input {
           margin: 0;
+          width: 16px;
+          height: 16px;
+          accent-color: #667eea;
         }
 
         .sort-controls {
@@ -571,16 +747,21 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         }
 
         .sort-select {
-          padding: 0.5rem;
-          border: 1px solid #e9ecef;
-          border-radius: 6px;
+          padding: 0.75rem 1rem;
+          border: 2px solid rgba(102, 126, 234, 0.2);
+          border-radius: 10px;
           font-size: 0.9rem;
-          background: white;
+          font-weight: 600;
+          background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(255, 255, 255, 0.9) 100());
+          cursor: pointer;
+          transition: all 0.3s ease;
         }
 
         .sort-select:focus {
           outline: none;
-          border-color: #3498db;
+          border-color: rgba(102, 126, 234, 0.5);
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          transform: translateY(-1px);
         }
 
         .sort-order {
@@ -591,28 +772,118 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
         .radio-item {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.75rem;
           cursor: pointer;
           font-size: 0.9rem;
+          font-weight: 600;
+          padding: 0.5rem;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .radio-item:hover {
+          background: rgba(102, 126, 234, 0.1);
         }
 
         .radio-item input {
           margin: 0;
+          width: 16px;
+          height: 16px;
+          accent-color: #667eea;
         }
 
         @media (max-width: 768px) {
+          .filters-content {
+            padding: 1.5rem;
+            gap: 1.5rem;
+          }
+
+          .filters-header {
+            padding: 1rem 1.5rem;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+          }
+
+          .filters-header h3 {
+            font-size: 1.1rem;
+            justify-content: center;
+          }
+
+          .header-actions {
+            justify-content: center;
+          }
+
+          .filter-group {
+            padding: 1rem;
+          }
+
+          .toggle-button {
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+          }
+
+          .available-tags {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            padding: 1rem;
+          }
+
+          .sort-order {
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+
+          .number-inputs {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+          }
+
+          .number-input {
+            width: 100%;
+          }
+
+          .selected-tags {
+            min-height: 4rem;
+          }
+
+          .range-slider-container {
+            margin: 1.5rem 0;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .advanced-filters {
+            border-radius: 16px;
+            margin: 0 0.5rem 1rem;
+          }
+
           .filters-content {
             padding: 1rem;
             gap: 1rem;
           }
 
-          .available-tags {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          .filter-group {
+            padding: 0.75rem;
           }
 
-          .sort-order {
-            flex-direction: column;
-            gap: 0.5rem;
+          .toggle-button {
+            padding: 0.875rem 1.25rem;
+            font-size: 0.9rem;
+          }
+
+          .filters-header h3 {
+            font-size: 1rem;
+          }
+
+          .available-tags {
+            grid-template-columns: 1fr;
+            max-height: 150px;
+          }
+
+          .selected-tag {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.625rem;
           }
         }
       `}</style>
