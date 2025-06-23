@@ -855,43 +855,6 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
           padding: 0 1rem;
         }
 
-        .control-button {
-          background: rgba(52, 152, 219, 0.1);
-          border: 1px solid rgba(52, 152, 219, 0.2);
-          color: #3498db;
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          cursor: pointer;
-          font-size: 0.875rem;
-          font-weight: 500;
-          transition: all 0.2s ease;
-        }
-
-        .control-button:hover {
-          background: rgba(52, 152, 219, 0.2);
-          border-color: rgba(52, 152, 219, 0.3);
-        }
-
-        .control-button.comparison-toggle.active {
-          background: rgba(156, 39, 176, 0.2);
-          border-color: rgba(156, 39, 176, 0.4);
-          color: #9c27b0;
-        }
-
-        .control-button.comparison-count {
-          background: rgba(33, 150, 243, 0.1);
-          border-color: rgba(33, 150, 243, 0.3);
-          color: #2196f3;
-        }
-
-        .control-button.comparison-count:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .control-button.comparison-count:not(:disabled):hover {
-          background: rgba(33, 150, 243, 0.2);
-        }
 
         .search-summary {
           color: #666;

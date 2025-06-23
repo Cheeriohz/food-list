@@ -122,6 +122,7 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
           )}
         </button>
       </div>
+      
     );
   }
 
