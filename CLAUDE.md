@@ -116,12 +116,38 @@ When creating or modifying files:
 ## Planning and Design Workflow
 When asked to create a plan for new work:
 1. Create a formal plan as a markdown file
-2. Put feature plans in a `features/` folder at the project root
-3. Put bug fix plans in a `bugs/` folder at the project root
-4. Name files descriptively (e.g., `tag-management-feature.md`, `recipe-click-crash-bug.md`)
-5. Add plan files to git tracking for review and iteration
-6. Include in plans: problem statement, solution approach, implementation steps, technical considerations
-7. Wait for plan approval before proceeding with implementation
+2. Put feature plans in individual folders under `features/` at the project root
+3. Put bug fix plans in individual folders under `bugs/` at the project root
+4. Use descriptive folder names (e.g., `features/tag-management/`, `bugs/recipe-click-crash/`)
+5. Store the main plan as `plan.md` within each feature/bug folder
+6. Add plan files to git tracking for review and iteration
+7. Include in plans: problem statement, solution approach, implementation steps, technical considerations
+8. Wait for plan approval before proceeding with implementation
+
+### Feature Folder Structure
+Each feature should follow this structure:
+```
+features/
+└── feature-name/
+    ├── plan.md                    # Main feature plan
+    └── validation/                # Validation documentation
+        ├── validation-plan.md     # Test strategy and scenarios
+        ├── puppeteer-tests.js     # Automated Puppeteer tests
+        ├── manual-test-checklist.md # Manual testing checklist
+        └── test-results.md        # Test execution results
+```
+
+### Bug Folder Structure
+Each bug fix should follow this structure:
+```
+bugs/
+└── bug-name/
+    ├── plan.md                    # Bug analysis and fix plan
+    └── validation/                # Validation documentation
+        ├── reproduction-steps.md  # Steps to reproduce the bug
+        ├── fix-validation.md      # Validation that fix works
+        └── regression-tests.md    # Tests to prevent regression
+```
 
 ## Documentation Workflow
 When asked to create documentation of the current codebase (outside of features and bugfixes):
@@ -138,3 +164,19 @@ When asked to create documentation of the current codebase (outside of features 
    - `documentation/deployment/` - Setup instructions, environment configuration, troubleshooting
    - `documentation/user-guides/` - End-user documentation, tutorials, workflows
    - `documentation/development/` - Coding standards, testing guidelines, contribution workflows
+
+## Feature and Bug Validation Workflow
+After implementing any feature or bug fix:
+1. **Create comprehensive validation documentation** in the feature/bug validation folder
+2. **Write Puppeteer automated tests** to validate the functionality works as expected
+3. **Create manual test checklists** for human validation scenarios
+4. **Execute both automated and manual tests** before considering work complete
+5. **Document test results** and any issues found
+6. **Use validation documents** for future regression testing and onboarding
+
+### Validation Requirements
+- **Every feature MUST have**: validation plan, Puppeteer tests, manual checklist
+- **Every bug fix MUST have**: reproduction steps, fix validation, regression tests
+- **Tests should cover**: functionality, performance, accessibility, edge cases
+- **Document all test results** including failures and resolutions
+- **Validation is not optional** - it's part of the definition of done
