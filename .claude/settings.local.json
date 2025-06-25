@@ -40,7 +40,18 @@
       "Bash(fuser:*)",
       "mcp__sequential-thinking__sequentialthinking_tools",
       "Bash(true)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "mcp__puppeteer__puppeteer_connect_active_tab",
+      "mcp__puppeteer__puppeteer_navigate",
+      "Bash(sudo apt-get:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(apt list:*)",
+      "Bash(dpkg:*)",
+      "Bash(ldd:*)",
+      "mcp__puppeteer__puppeteer_screenshot",
+      "mcp__puppeteer__puppeteer_click",
+      "mcp__puppeteer__puppeteer_fill",
+      "mcp__puppeteer__puppeteer_evaluate"
     ],
     "deny": []
   }

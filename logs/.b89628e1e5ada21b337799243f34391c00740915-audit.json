@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/doug/repos/ai-edit/food-list/logs/.b89628e1e5ada21b337799243f34391c00740915-audit.json",
+    "files": [
+        {
+            "date": 1750864769835,
+            "name": "/home/doug/repos/ai-edit/food-list/logs/mcp-puppeteer-2025-06-25.log",
+            "hash": "5a68d7fa182528c83b19f50a0d6fe3365764a17a8e59fcaecb13245feb0111eb"
+        }
+    ],
+    "hashType": "sha256"
+}
