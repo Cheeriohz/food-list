@@ -72,6 +72,10 @@ interface UnifiedDataContextType extends UnifiedDataState {
   
   // Recipe actions (delegated to existing context)
   loadRecipeDetails: (recipeId: number) => Promise<Recipe | null>;
+  
+  // Services - CRITICAL FIX: Expose initialized services
+  treeService: TreeDataService;
+  searchService: SearchIndexService;
 }
 
 const initialState: UnifiedDataState = {
@@ -354,65 +358,81 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     await loadData();
   }, [loadData]);
 
-  // Load data on mount - using useEffect with proper dependencies
+  // Load data on mount - comprehensive approach with fallbacks
   useEffect(() => {
-    console.log('📥 UnifiedDataContext: useEffect triggered, calling loadData');
+    console.log('📥 ✅ UnifiedDataContext: useEffect SUCCESSFULLY TRIGGERED!');
+    console.log('📥 Services available - searchService:', !!searchService, 'treeService:', !!treeService);
     
-    const initializeData = async () => {
-      console.log('📥 Starting data initialization...');
+    // Add a small delay to ensure component is fully mounted
+    const initializeWithDelay = setTimeout(() => {
+      console.log('📥 Starting delayed initialization...');
       
-      try {
-        console.log('📥 Fetching from /api/recipes...');
-        const recipesResponse = await fetch('/api/recipes');
-        console.log('📥 Recipes response status:', recipesResponse.status, recipesResponse.ok);
-        
-        console.log('📥 Fetching from /api/tags...');
-        const tagsResponse = await fetch('/api/tags');
-        console.log('📥 Tags response status:', tagsResponse.status, tagsResponse.ok);
-        
-        if (!recipesResponse.ok || !tagsResponse.ok) {
-          throw new Error(`API Error - Recipes: ${recipesResponse.status}, Tags: ${tagsResponse.status}`);
+      const initializeData = async () => {
+        try {
+          console.log('📥 🚀 Starting data initialization...');
+          dispatch({ type: 'SET_LOADING', payload: true });
+          
+          console.log('📥 Fetching from /api/recipes...');
+          const recipesResponse = await fetch('/api/recipes');
+          console.log('📥 Recipes response:', recipesResponse.status, recipesResponse.statusText);
+          
+          console.log('📥 Fetching from /api/tags...');
+          const tagsResponse = await fetch('/api/tags');
+          console.log('📥 Tags response:', tagsResponse.status, tagsResponse.statusText);
+          
+          if (!recipesResponse.ok || !tagsResponse.ok) {
+            throw new Error(`API Error - Recipes: ${recipesResponse.status}, Tags: ${tagsResponse.status}`);
+          }
+          
+          console.log('📥 Parsing JSON responses...');
+          const recipes: Recipe[] = await recipesResponse.json();
+          const tags: Tag[] = await tagsResponse.json();
+          
+          console.log('📥 🎉 SUCCESSFULLY LOADED DATA!');
+          console.log('📥 - Recipes:', recipes.length);
+          console.log('📥 - Tags:', tags.length);
+          if (recipes.length > 0) {
+            console.log('📥 - First recipe:', recipes[0].title, 'with', recipes[0].tags?.length || 0, 'tags');
+          }
+          if (tags.length > 0) {
+            console.log('📥 - First tag:', tags[0].name);
+          }
+          
+          // Set the data in state
+          console.log('📥 Setting data in Redux state...');
+          dispatch({ type: 'SET_DATA', payload: { recipes, tags } });
+          dispatch({ type: 'SET_LOADING', payload: false });
+          
+          // Initialize services
+          console.log('📥 Initializing TreeDataService...');
+          dispatch({ type: 'SET_INDEXING', payload: true });
+          
+          treeService.initialize(recipes, tags);
+          console.log('📥 ✅ TreeDataService initialized');
+          
+          console.log('📥 Building search index...');
+          await searchService.buildIndex(recipes, tags);
+          console.log('📥 ✅ Search index built');
+          
+          dispatch({ type: 'SET_INDEXING', payload: false });
+          console.log('📥 🎊 COMPLETE SUCCESS - Data initialization finished!');
+          
+        } catch (error) {
+          console.error('📥 💥 CRITICAL ERROR in data initialization:', error);
+          console.error('📥 Error message:', error.message);
+          console.error('📥 Full error:', error);
+          dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
+          dispatch({ type: 'SET_LOADING', payload: false });
         }
-        
-        console.log('📥 Parsing JSON responses...');
-        const recipes: Recipe[] = await recipesResponse.json();
-        const tags: Tag[] = await tagsResponse.json();
-        
-        console.log('📥 ✅ Data fetched successfully!');
-        console.log('📥 - Recipes count:', recipes.length);
-        console.log('📥 - Tags count:', tags.length);
-        console.log('📥 - Sample recipe:', recipes[0]);
-        console.log('📥 - Sample tag:', tags[0]);
-        
-        // Set the data in state
-        console.log('📥 Setting data in state...');
-        dispatch({ type: 'SET_DATA', payload: { recipes, tags } });
-        
-        // Initialize services
-        console.log('📥 Starting service initialization...');
-        dispatch({ type: 'SET_INDEXING', payload: true });
-        
-        console.log('📥 Calling treeService.initialize...');
-        treeService.initialize(recipes, tags);
-        console.log('📥 ✅ treeService.initialize completed');
-        
-        console.log('📥 Calling searchService.buildIndex...');
-        await searchService.buildIndex(recipes, tags);
-        console.log('📥 ✅ searchService.buildIndex completed');
-        
-        dispatch({ type: 'SET_INDEXING', payload: false });
-        console.log('📥 🎉 Data initialization completed successfully!');
-        
-      } catch (error) {
-        console.error('📥 ❌ Error in data initialization:', error);
-        console.error('📥 Error details:', error.message);
-        console.error('📥 Error stack:', error.stack);
-        dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
-      }
-    };
+      };
+      
+      initializeData();
+    }, 100); // 100ms delay to ensure mounting is complete
     
-    initializeData();
-  }, []); // Empty dependency - run once on mount only
+    return () => {
+      clearTimeout(initializeWithDelay);
+    };
+  }, []); // Empty dependency array - run once on mount only
 
   const loadRecipeDetails = useCallback(async (recipeId: number): Promise<Recipe | null> => {
     try {
@@ -448,7 +468,11 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     refreshData,
     
     // Recipe actions
-    loadRecipeDetails
+    loadRecipeDetails,
+    
+    // Services - CRITICAL FIX: Expose initialized services
+    treeService,
+    searchService
   };
 
   return (
@@ -459,9 +483,17 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
 };
 
 export const useUnifiedData = (): UnifiedDataContextType => {
+  console.log('🎯 useUnifiedData: Hook called!');
   const context = useContext(UnifiedDataContext);
+  console.log('🎯 useUnifiedData: Context value:', !!context);
+  
   if (!context) {
+    console.error('🎯 useUnifiedData: ❌ NO CONTEXT - throwing error');
     throw new Error('useUnifiedData must be used within a UnifiedDataProvider');
   }
+  
+  console.log('🎯 useUnifiedData: ✅ Context found, returning data');
+  console.log('🎯 useUnifiedData: - recipes:', context.recipes?.length || 0);
+  console.log('🎯 useUnifiedData: - tree nodes:', context.tree?.length || 0);
   return context;
 };

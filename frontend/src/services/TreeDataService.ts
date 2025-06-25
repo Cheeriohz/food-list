@@ -60,8 +60,16 @@ class TreeDataService {
    * Initialize the service with data
    */
   initialize(recipes: Recipe[], tags: Tag[]): void {
+    console.log('🔧 TreeDataService: initialize called with', recipes.length, 'recipes and', tags.length, 'tags');
+    console.log('🔧 TreeDataService: Sample recipe:', recipes[0]);
+    console.log('🔧 TreeDataService: Sample tag:', tags[0]);
+    
+    console.log('🔧 TreeDataService: Clearing maps...');
     this.clearMaps();
+    
+    console.log('🔧 TreeDataService: About to call buildDataMaps...');
     this.buildDataMaps(recipes, tags);
+    console.log('🔧 TreeDataService: buildDataMaps completed');
   }
 
   /**
@@ -403,8 +411,19 @@ class TreeDataService {
     maxDepth: number, 
     showEmptyTags: boolean
   ): TreeNode[] {
+    console.log('🔧 buildFullHierarchy: tagMap size:', this.tagMap.size, 'recipeMap size:', this.recipeMap.size);
+    
+    // CRITICAL FIX: If maps are empty, this TreeDataService instance wasn't initialized
+    if (this.tagMap.size === 0 || this.recipeMap.size === 0) {
+      console.log('🔧 buildFullHierarchy: ❌ Maps are empty! TreeDataService not initialized');
+      console.log('🔧 buildFullHierarchy: This instance needs data - returning empty tree');
+      return [];
+    }
+    
     const allTagIds = Array.from(this.tagMap.keys());
     const allRecipeIds = new Set(this.recipeMap.keys());
+    
+    console.log('🔧 buildFullHierarchy: Building with', allTagIds.length, 'tags and', allRecipeIds.size, 'recipes');
     
     return this.buildTagHierarchy(
       allTagIds,

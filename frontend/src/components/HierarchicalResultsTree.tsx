@@ -309,72 +309,74 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     searchResults, 
     loading, 
     treeStats,
-    toggleNodeExpansion 
+    toggleNodeExpansion,
+    // CRITICAL FIX: Use initialized services from context
+    treeService,
+    searchService
   } = useUnifiedData();
 
-  // BYPASS: Direct data loading to fix broken UnifiedDataProvider
-  const [bypassTree, setBypassTree] = useState<TreeNode[]>([]);
-  const [bypassLoading, setBypassLoading] = useState(false);
-  const [bypassInitialized, setBypassInitialized] = useState(false);
+  // EMERGENCY FIX: Manual TreeDataService initialization since context useEffect never runs
+  const [emergencyTree, setEmergencyTree] = useState<TreeNode[]>([]);
+  const [emergencyInitialized, setEmergencyInitialized] = useState(false);
 
   useEffect(() => {
-    if (!bypassInitialized) {
-      console.log('🔧 BYPASS: Starting direct data loading...');
-      setBypassLoading(true);
+    // Emergency data loading and service initialization since context fails
+    // Run if: no emergency tree yet AND TreeDataService available AND (no tree OR tree shows 0 recipes)
+    if (!emergencyInitialized && treeService && (tree.length === 0 || treeStats.recipeNodes === 0)) {
+      console.log('🚨 EMERGENCY: Context useEffect never ran - manually initializing TreeDataService...');
       
-      const loadDataDirectly = async () => {
+      const initializeEmergency = async () => {
         try {
-          console.log('🔧 BYPASS: Fetching recipes and tags...');
+          console.log('🚨 EMERGENCY: Fetching data manually...');
           const [recipesResponse, tagsResponse] = await Promise.all([
             fetch('/api/recipes'),
             fetch('/api/tags')
           ]);
           
           if (!recipesResponse.ok || !tagsResponse.ok) {
-            throw new Error('Failed to fetch data');
+            throw new Error('API fetch failed');
           }
           
           const recipes: Recipe[] = await recipesResponse.json();
           const tags: Tag[] = await tagsResponse.json();
           
-          console.log('🔧 BYPASS: Data loaded - Recipes:', recipes.length, 'Tags:', tags.length);
-          console.log('🔧 BYPASS: Sample recipe:', recipes[0]);
+          console.log('🚨 EMERGENCY: Data loaded -', recipes.length, 'recipes,', tags.length, 'tags');
+          console.log('🚨 EMERGENCY: Sample recipe:', recipes[0]);
+          console.log('🚨 EMERGENCY: Sample tag:', tags[0]);
           
-          // Initialize TreeDataService directly
-          const treeService = new TreeDataService();
-          console.log('🔧 BYPASS: Initializing TreeDataService...');
+          // CRITICAL: Initialize the TreeDataService with data
+          console.log('🚨 EMERGENCY: Initializing TreeDataService...');
           treeService.initialize(recipes, tags);
+          console.log('🚨 EMERGENCY: TreeDataService initialized!');
           
           // Build tree
-          const tree = treeService.buildTree({ showEmptyTags: true });
-          console.log('🔧 BYPASS: Tree built with', tree.length, 'root nodes');
+          const emergencyTreeData = treeService.buildTree({ showEmptyTags: true });
+          console.log('🚨 EMERGENCY: Tree built with', emergencyTreeData.length, 'root nodes');
           
-          // Get tree stats
-          const stats = treeService.getTreeStatistics(tree);
-          console.log('🔧 BYPASS: Tree stats:', stats);
+          const stats = treeService.getTreeStatistics(emergencyTreeData);
+          console.log('🚨 EMERGENCY: Tree stats:', stats);
           
-          setBypassTree(tree);
-          setBypassInitialized(true);
-          console.log('🔧 BYPASS: ✅ Direct data loading completed!');
+          setEmergencyTree(emergencyTreeData);
+          setEmergencyInitialized(true);
+          console.log('🚨 EMERGENCY: 🎉 Manual initialization completed successfully!');
           
         } catch (error) {
-          console.error('🔧 BYPASS: ❌ Error in direct data loading:', error);
-        } finally {
-          setBypassLoading(false);
+          console.error('🚨 EMERGENCY: ❌ Manual initialization failed:', error);
         }
       };
       
-      loadDataDirectly();
+      initializeEmergency();
     }
-  }, [bypassInitialized]);
+  }, [tree.length, treeService, emergencyInitialized, treeStats.recipeNodes])
 
-  // Use bypass data if available, otherwise fall back to context data
-  const activeTree = bypassTree.length > 0 ? bypassTree : tree;
-  const activeLoading = bypassLoading || loading;
+  // Use emergency data if available, otherwise fall back to context data
+  const activeTree = emergencyTree.length > 0 ? emergencyTree : tree;
+  const activeLoading = loading;
 
   // Debug logging
   console.log('🔴 Tree render - Query:', query, 'Nodes:', activeTree.length, 'Results:', searchResults.length);
-  console.log('🔴 Using bypass tree:', bypassTree.length > 0, 'Bypass initialized:', bypassInitialized);
+  console.log('🔴 Using emergency tree:', emergencyTree.length > 0, 'Emergency initialized:', emergencyInitialized);
+  console.log('🔴 Context tree length:', tree.length, 'TreeService available:', !!treeService);
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
