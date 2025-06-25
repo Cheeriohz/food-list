@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useUnifiedData } from '../contexts/UnifiedDataContext';
+import { Recipe } from '../types';
 import UnifiedSearchBar from './UnifiedSearchBar';
-import HierarchicalResultsTree from './HierarchicalResultsTree';
+import RecipeGrid from './RecipeGrid';
+import RecipeDetail from './RecipeDetail';
 import EmptySearchState from './EmptySearchState';
 import AdvancedSearchFilters, { SearchFilters } from './AdvancedSearchFilters';
 import { useTags } from '../contexts/TagContext';
@@ -16,13 +18,18 @@ interface SearchCentricLayoutProps {
 const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onCreateRecipe, onManageTags, showEmptyState = true }) => {
   const {
     searchQuery,
+    searchResults,
+    recipes,
     showResults,
     loading,
     indexing,
     error,
-    treeStats,
+    selectedRecipeId,
+    showRecipeDetail,
     setSearchQuery,
-    clearSearch
+    clearSearch,
+    selectRecipe,
+    showRecipeDetailView
   } = useUnifiedData();
 
   const [searchFocused, setSearchFocused] = useState(false);
@@ -68,7 +75,27 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
     setBrowseMode(false);
     setSearchFocused(false);
     clearSearch();
+    showRecipeDetailView(false);
+    selectRecipe(null);
   };
+
+  const handleRecipeClick = (recipeId: number) => {
+    selectRecipe(recipeId);
+    showRecipeDetailView(true);
+  };
+
+  const handleRecipeDetailBack = () => {
+    showRecipeDetailView(false);
+    selectRecipe(null);
+  };
+
+  // Get recipes to display
+  const displayRecipes = searchQuery.length > 0 
+    ? searchResults
+        .filter(result => result.type === 'recipe')
+        .map(result => recipes.find(r => r.id === result.id))
+        .filter(Boolean) as Recipe[]
+    : recipes;
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -139,11 +166,11 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
             <div className="search-stats">
               {searchQuery ? (
                 <span>
-                  Found {treeStats.recipeNodes} recipes in {treeStats.tagNodes} categories
+                  Found {searchResults.length} recipes
                 </span>
               ) : (
                 <span>
-                  {treeStats.recipeNodes} total recipes • {treeStats.tagNodes} categories
+                  {recipes.length} total recipes
                 </span>
               )}
             </div>
@@ -183,18 +210,28 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
                   <h2>Browse All Recipes</h2>
                 </div>
               )}
-              <AdvancedSearchFilters
-                filters={searchFilters}
-                onFiltersChange={setSearchFilters}
-                availableTags={tags}
-                isOpen={filtersOpen}
-                onToggle={() => setFiltersOpen(!filtersOpen)}
-                onReset={handleFiltersReset}
-              />
-              <HierarchicalResultsTree 
-                query={searchQuery} 
-                filters={searchFilters}
-              />
+              {showRecipeDetail && selectedRecipeId ? (
+                <RecipeDetail 
+                  recipeId={selectedRecipeId}
+                  onBack={handleRecipeDetailBack}
+                />
+              ) : (
+                <>
+                  <AdvancedSearchFilters
+                    filters={searchFilters}
+                    onFiltersChange={setSearchFilters}
+                    availableTags={tags}
+                    isOpen={filtersOpen}
+                    onToggle={() => setFiltersOpen(!filtersOpen)}
+                    onReset={handleFiltersReset}
+                  />
+                  <RecipeGrid 
+                    recipes={displayRecipes}
+                    onRecipeClick={handleRecipeClick}
+                    loading={loading}
+                  />
+                </>
+              )}
             </div>
           )
         ) : showEmptyState ? (

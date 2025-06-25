@@ -1,14 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import { Recipe, Tag } from '../types';
 import SearchIndexService, { SearchResult } from '../services/SearchIndexService';
-import TreeDataService, { TreeNode, VirtualItem } from '../services/TreeDataService';
 
 interface UnifiedDataState {
   // Core data
   recipes: Recipe[];
   tags: Tag[];
-  tree: TreeNode[];
-  virtualizedItems: VirtualItem[];
   
   // Search state
   searchQuery: string;
@@ -16,23 +13,14 @@ interface UnifiedDataState {
   searchSuggestions: string[];
   
   // UI state
-  expandedNodes: Set<string>;
-  highlightedNodeId: string | null;
   showResults: boolean;
+  selectedRecipeId: number | null;
+  showRecipeDetail: boolean;
   
   // Performance state
   loading: boolean;
   indexing: boolean;
   error: string | null;
-  
-  // Statistics
-  treeStats: {
-    totalNodes: number;
-    visibleNodes: number;
-    tagNodes: number;
-    recipeNodes: number;
-    maxDepth: number;
-  };
 }
 
 type UnifiedDataAction =
@@ -43,13 +31,9 @@ type UnifiedDataAction =
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'SET_SEARCH_RESULTS'; payload: SearchResult[] }
   | { type: 'SET_SEARCH_SUGGESTIONS'; payload: string[] }
-  | { type: 'SET_TREE'; payload: TreeNode[] }
-  | { type: 'SET_VIRTUALIZED_ITEMS'; payload: VirtualItem[] }
-  | { type: 'TOGGLE_NODE_EXPANSION'; payload: string }
-  | { type: 'SET_EXPANDED_NODES'; payload: Set<string> }
-  | { type: 'SET_HIGHLIGHTED_NODE'; payload: string | null }
   | { type: 'SET_SHOW_RESULTS'; payload: boolean }
-  | { type: 'SET_TREE_STATS'; payload: UnifiedDataState['treeStats'] };
+  | { type: 'SET_SELECTED_RECIPE'; payload: number | null }
+  | { type: 'SET_SHOW_RECIPE_DETAIL'; payload: boolean };
 
 interface UnifiedDataContextType extends UnifiedDataState {
   // Search actions
@@ -57,48 +41,30 @@ interface UnifiedDataContextType extends UnifiedDataState {
   clearSearch: () => void;
   getSuggestions: (partialQuery: string) => string[];
   
-  // Tree actions
-  toggleNodeExpansion: (nodeId: string) => void;
-  expandPath: (nodeId: string) => void;
-  collapseAll: () => void;
-  expandAll: () => void;
-  
-  // Node actions
-  highlightNode: (nodeId: string | null) => void;
-  findNodeById: (nodeId: string) => TreeNode | null;
+  // Recipe actions
+  selectRecipe: (recipeId: number | null) => void;
+  showRecipeDetailView: (show: boolean) => void;
+  loadRecipeDetails: (recipeId: number) => Promise<Recipe | null>;
   
   // Data actions
   refreshData: () => Promise<void>;
   
-  // Recipe actions (delegated to existing context)
-  loadRecipeDetails: (recipeId: number) => Promise<Recipe | null>;
-  
-  // Services - CRITICAL FIX: Expose initialized services
-  treeService: TreeDataService;
+  // Services
   searchService: SearchIndexService;
 }
 
 const initialState: UnifiedDataState = {
   recipes: [],
   tags: [],
-  tree: [],
-  virtualizedItems: [],
   searchQuery: '',
   searchResults: [],
   searchSuggestions: [],
-  expandedNodes: new Set(),
-  highlightedNodeId: null,
   showResults: false,
+  selectedRecipeId: null,
+  showRecipeDetail: false,
   loading: false,
   indexing: false,
-  error: null,
-  treeStats: {
-    totalNodes: 0,
-    visibleNodes: 0,
-    tagNodes: 0,
-    recipeNodes: 0,
-    maxDepth: 0
-  }
+  error: null
 };
 
 const unifiedDataReducer = (state: UnifiedDataState, action: UnifiedDataAction): UnifiedDataState => {
@@ -129,33 +95,14 @@ const unifiedDataReducer = (state: UnifiedDataState, action: UnifiedDataAction):
     case 'SET_SEARCH_SUGGESTIONS':
       return { ...state, searchSuggestions: action.payload };
     
-    case 'SET_TREE':
-      return { ...state, tree: action.payload };
-    
-    case 'SET_VIRTUALIZED_ITEMS':
-      return { ...state, virtualizedItems: action.payload };
-    
-    case 'TOGGLE_NODE_EXPANSION': {
-      const newExpanded = new Set(state.expandedNodes);
-      if (newExpanded.has(action.payload)) {
-        newExpanded.delete(action.payload);
-      } else {
-        newExpanded.add(action.payload);
-      }
-      return { ...state, expandedNodes: newExpanded };
-    }
-    
-    case 'SET_EXPANDED_NODES':
-      return { ...state, expandedNodes: action.payload };
-    
-    case 'SET_HIGHLIGHTED_NODE':
-      return { ...state, highlightedNodeId: action.payload };
-    
     case 'SET_SHOW_RESULTS':
       return { ...state, showResults: action.payload };
     
-    case 'SET_TREE_STATS':
-      return { ...state, treeStats: action.payload };
+    case 'SET_SELECTED_RECIPE':
+      return { ...state, selectedRecipeId: action.payload };
+    
+    case 'SET_SHOW_RECIPE_DETAIL':
+      return { ...state, showRecipeDetail: action.payload };
     
     default:
       return state;
@@ -175,16 +122,12 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
   
   // Services
   const searchService = useMemo(() => new SearchIndexService(), []);
-  const treeService = useMemo(() => new TreeDataService(), []);
 
   // Initialize data and build search index
   const initializeServices = useCallback(async (recipes: Recipe[], tags: Tag[]) => {
     dispatch({ type: 'SET_INDEXING', payload: true });
     
     try {
-      // Initialize tree service
-      treeService.initialize(recipes, tags);
-      
       // Build search index
       await searchService.buildIndex(recipes, tags);
       
@@ -192,7 +135,7 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
-  }, [searchService, treeService]);
+  }, [searchService]);
 
   // Load initial data
   const loadData = useCallback(async () => {
@@ -231,33 +174,6 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     }
   }, [initializeServices]);
 
-  // Build tree when data or search changes
-  const buildTree = useCallback(() => {
-    if (state.recipes.length === 0 || state.indexing) {
-      return;
-    }
-    
-    const buildOptions = {
-      searchResults: state.searchResults.length > 0 ? state.searchResults : undefined,
-      expandedNodes: state.expandedNodes,
-      maxDepth: 10,
-      showEmptyTags: state.searchQuery.length === 0 // Show empty tags only when not searching
-    };
-    
-    const tree = treeService.buildTree(buildOptions);
-    console.log('🌳 Tree built:', tree.length, 'root nodes');
-    
-    dispatch({ type: 'SET_TREE', payload: tree });
-    
-    // Update tree statistics
-    const stats = treeService.getTreeStatistics(tree);
-    dispatch({ type: 'SET_TREE_STATS', payload: stats });
-    
-    // Build virtualized items for performance
-    const virtualizedItems = treeService.flattenTreeForVirtualization(tree);
-    dispatch({ type: 'SET_VIRTUALIZED_ITEMS', payload: virtualizedItems });
-    
-  }, [state.recipes, state.searchResults, state.expandedNodes, state.indexing, state.searchQuery, treeService]);
 
   // Search functionality
   const performSearch = useCallback(async (query: string) => {
@@ -291,10 +207,6 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     return () => clearTimeout(timeoutId);
   }, [state.searchQuery, performSearch]);
 
-  // Rebuild tree when search results change
-  useEffect(() => {
-    buildTree();
-  }, [buildTree]);
 
   // Load data on mount
   useEffect(() => {
@@ -317,42 +229,13 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     return searchService.getSuggestions(partialQuery, 5);
   }, [searchService]);
 
-  const toggleNodeExpansion = useCallback((nodeId: string) => {
-    dispatch({ type: 'TOGGLE_NODE_EXPANSION', payload: nodeId });
+  const selectRecipe = useCallback((recipeId: number | null) => {
+    dispatch({ type: 'SET_SELECTED_RECIPE', payload: recipeId });
   }, []);
 
-  const expandPath = useCallback((nodeId: string) => {
-    const updatedTree = treeService.expandPath(state.tree, nodeId);
-    dispatch({ type: 'SET_TREE', payload: updatedTree });
-  }, [state.tree, treeService]);
-
-  const collapseAll = useCallback(() => {
-    dispatch({ type: 'SET_EXPANDED_NODES', payload: new Set() });
+  const showRecipeDetailView = useCallback((show: boolean) => {
+    dispatch({ type: 'SET_SHOW_RECIPE_DETAIL', payload: show });
   }, []);
-
-  const expandAll = useCallback(() => {
-    const allNodeIds = new Set<string>();
-    
-    const collectNodeIds = (nodes: TreeNode[]) => {
-      nodes.forEach(node => {
-        if (node.type === 'tag') { // Only expand tags, not recipes
-          allNodeIds.add(node.id);
-        }
-        collectNodeIds(node.children);
-      });
-    };
-    
-    collectNodeIds(state.tree);
-    dispatch({ type: 'SET_EXPANDED_NODES', payload: allNodeIds });
-  }, [state.tree]);
-
-  const highlightNode = useCallback((nodeId: string | null) => {
-    dispatch({ type: 'SET_HIGHLIGHTED_NODE', payload: nodeId });
-  }, []);
-
-  const findNodeById = useCallback((nodeId: string): TreeNode | null => {
-    return treeService.findNodeById(state.tree, nodeId);
-  }, [state.tree, treeService]);
 
   const refreshData = useCallback(async () => {
     await loadData();
@@ -361,7 +244,7 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
   // Load data on mount - comprehensive approach with fallbacks
   useEffect(() => {
     console.log('📥 ✅ UnifiedDataContext: useEffect SUCCESSFULLY TRIGGERED!');
-    console.log('📥 Services available - searchService:', !!searchService, 'treeService:', !!treeService);
+    console.log('📥 Services available - searchService:', !!searchService);
     
     // Add a small delay to ensure component is fully mounted
     const initializeWithDelay = setTimeout(() => {
@@ -404,13 +287,8 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
           dispatch({ type: 'SET_LOADING', payload: false });
           
           // Initialize services
-          console.log('📥 Initializing TreeDataService...');
-          dispatch({ type: 'SET_INDEXING', payload: true });
-          
-          treeService.initialize(recipes, tags);
-          console.log('📥 ✅ TreeDataService initialized');
-          
           console.log('📥 Building search index...');
+          dispatch({ type: 'SET_INDEXING', payload: true });
           await searchService.buildIndex(recipes, tags);
           console.log('📥 ✅ Search index built');
           
@@ -419,9 +297,9 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
           
         } catch (error) {
           console.error('📥 💥 CRITICAL ERROR in data initialization:', error);
-          console.error('📥 Error message:', error.message);
+          console.error('📥 Error message:', error instanceof Error ? error.message : error);
           console.error('📥 Full error:', error);
-          dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
+          dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Unknown error' });
           dispatch({ type: 'SET_LOADING', payload: false });
         }
       };
@@ -454,24 +332,15 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
     clearSearch,
     getSuggestions,
     
-    // Tree actions
-    toggleNodeExpansion,
-    expandPath,
-    collapseAll,
-    expandAll,
-    
-    // Node actions
-    highlightNode,
-    findNodeById,
+    // Recipe actions
+    selectRecipe,
+    showRecipeDetailView,
+    loadRecipeDetails,
     
     // Data actions
     refreshData,
     
-    // Recipe actions
-    loadRecipeDetails,
-    
-    // Services - CRITICAL FIX: Expose initialized services
-    treeService,
+    // Services
     searchService
   };
 
@@ -494,6 +363,6 @@ export const useUnifiedData = (): UnifiedDataContextType => {
   
   console.log('🎯 useUnifiedData: ✅ Context found, returning data');
   console.log('🎯 useUnifiedData: - recipes:', context.recipes?.length || 0);
-  console.log('🎯 useUnifiedData: - tree nodes:', context.tree?.length || 0);
+  console.log('🎯 useUnifiedData: - search results:', context.searchResults?.length || 0);
   return context;
 };
