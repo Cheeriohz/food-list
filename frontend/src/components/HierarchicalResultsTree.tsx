@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useUnifiedData } from '../contexts/UnifiedDataContext';
 import { TreeNode } from '../services/TreeDataService';
-import { Recipe } from '../types';
+import TreeDataService from '../services/TreeDataService';
+import SearchIndexService from '../services/SearchIndexService';
+import { Recipe, Tag } from '../types';
 import VirtualScrollTree from './VirtualScrollTree';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
@@ -310,8 +312,69 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     toggleNodeExpansion 
   } = useUnifiedData();
 
+  // BYPASS: Direct data loading to fix broken UnifiedDataProvider
+  const [bypassTree, setBypassTree] = useState<TreeNode[]>([]);
+  const [bypassLoading, setBypassLoading] = useState(false);
+  const [bypassInitialized, setBypassInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!bypassInitialized) {
+      console.log('🔧 BYPASS: Starting direct data loading...');
+      setBypassLoading(true);
+      
+      const loadDataDirectly = async () => {
+        try {
+          console.log('🔧 BYPASS: Fetching recipes and tags...');
+          const [recipesResponse, tagsResponse] = await Promise.all([
+            fetch('/api/recipes'),
+            fetch('/api/tags')
+          ]);
+          
+          if (!recipesResponse.ok || !tagsResponse.ok) {
+            throw new Error('Failed to fetch data');
+          }
+          
+          const recipes: Recipe[] = await recipesResponse.json();
+          const tags: Tag[] = await tagsResponse.json();
+          
+          console.log('🔧 BYPASS: Data loaded - Recipes:', recipes.length, 'Tags:', tags.length);
+          console.log('🔧 BYPASS: Sample recipe:', recipes[0]);
+          
+          // Initialize TreeDataService directly
+          const treeService = new TreeDataService();
+          console.log('🔧 BYPASS: Initializing TreeDataService...');
+          treeService.initialize(recipes, tags);
+          
+          // Build tree
+          const tree = treeService.buildTree({ showEmptyTags: true });
+          console.log('🔧 BYPASS: Tree built with', tree.length, 'root nodes');
+          
+          // Get tree stats
+          const stats = treeService.getTreeStatistics(tree);
+          console.log('🔧 BYPASS: Tree stats:', stats);
+          
+          setBypassTree(tree);
+          setBypassInitialized(true);
+          console.log('🔧 BYPASS: ✅ Direct data loading completed!');
+          
+        } catch (error) {
+          console.error('🔧 BYPASS: ❌ Error in direct data loading:', error);
+        } finally {
+          setBypassLoading(false);
+        }
+      };
+      
+      loadDataDirectly();
+    }
+  }, [bypassInitialized]);
+
+  // Use bypass data if available, otherwise fall back to context data
+  const activeTree = bypassTree.length > 0 ? bypassTree : tree;
+  const activeLoading = bypassLoading || loading;
+
   // Debug logging
-  console.log('🔴 Tree render - Query:', query, 'Nodes:', tree.length, 'Results:', searchResults.length);
+  console.log('🔴 Tree render - Query:', query, 'Nodes:', activeTree.length, 'Results:', searchResults.length);
+  console.log('🔴 Using bypass tree:', bypassTree.length > 0, 'Bypass initialized:', bypassInitialized);
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
@@ -450,7 +513,7 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
     return filteredNodes;
   }, [filters]);
 
-  const visibleNodes = applyFiltersAndSorting(tree);
+  const visibleNodes = applyFiltersAndSorting(activeTree);
   
   // Debug visible nodes
   console.log('🔴 Visible nodes:', visibleNodes.length);
@@ -547,9 +610,9 @@ const HierarchicalResultsTree: React.FC<HierarchicalResultsTreeProps> = ({ query
 
   // Determine if virtual scrolling should be used (for large datasets)
   useEffect(() => {
-    const totalNodes = tree.filter(node => node.visible).length;
+    const totalNodes = activeTree.filter(node => node.visible).length;
     setUseVirtualScrolling(totalNodes > 50); // Enable virtual scrolling for 50+ items
-  }, [tree]);
+  }, [activeTree]);
 
   // Initialize keyboard focus when nodes are available
   useEffect(() => {
