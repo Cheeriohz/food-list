@@ -180,3 +180,98 @@ After implementing any feature or bug fix:
 - **Tests should cover**: functionality, performance, accessibility, edge cases
 - **Document all test results** including failures and resolutions
 - **Validation is not optional** - it's part of the definition of done
+
+### Puppeteer Validation Setup and Execution
+
+#### Prerequisites for Puppeteer Testing
+1. **Browser Installation**: Ensure a Chrome/Chromium browser is available for remote debugging
+   - If not installed: `sudo apt update && sudo apt install -y chromium-browser`
+   - Alternative Chrome installation (if needed):
+     ```bash
+     wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+     sudo apt update && sudo apt install -y google-chrome-stable
+     ```
+
+2. **Application Running**: Ensure both frontend and backend are running
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:3001
+   - Start with: `npm run dev`
+
+3. **Port Conflict Resolution**: Clear any existing processes if needed
+   ```bash
+   # Kill existing processes on common ports
+   lsof -ti:3000 | xargs kill -9 2>/dev/null
+   lsof -ti:3001 | xargs kill -9 2>/dev/null
+   lsof -ti:9222 | xargs kill -9 2>/dev/null
+   ```
+
+#### Browser Setup for Remote Debugging
+1. **Kill existing browser instances**:
+   ```bash
+   pkill -f "chrome\|chromium" 2>/dev/null
+   sleep 3
+   ```
+
+2. **Start browser with remote debugging**:
+   ```bash
+   # For Chromium
+   chromium-browser --remote-debugging-port=9222 --no-first-run --no-default-browser-check --disable-web-security --user-data-dir=/tmp/chromium_dev_session http://localhost:3000 > /dev/null 2>&1 &
+   
+   # For Chrome (if available)
+   google-chrome --remote-debugging-port=9222 --no-first-run --no-default-browser-check --disable-web-security --user-data-dir=/tmp/chrome_dev_session http://localhost:3000 > /dev/null 2>&1 &
+   ```
+
+3. **Verify debugging port accessibility**:
+   ```bash
+   curl -s http://localhost:9222/json | head -3
+   # Should return JSON with browser tab information
+   ```
+
+#### Puppeteer Test Execution Steps
+1. **Connect to active browser tab**:
+   ```typescript
+   mcp__puppeteer__puppeteer_connect_active_tab({ targetUrl: "http://localhost:3000" })
+   ```
+
+2. **Standard validation test sequence**:
+   - Take initial screenshot: `mcp__puppeteer__puppeteer_screenshot({ name: "01_initial_state" })`
+   - Test search functionality: `mcp__puppeteer__puppeteer_fill({ selector: "input[placeholder*='Search']", value: "test_term" })`
+   - Test navigation: `mcp__puppeteer__puppeteer_click({ selector: ".recipe-card:first-child" })`
+   - Test responsive design: Change viewport and take screenshots
+   - Document all results with descriptive screenshot names
+
+3. **Common validation scenarios to test**:
+   - Initial page load and empty states
+   - Search functionality and results display
+   - Card/item click navigation
+   - Back button and navigation flow
+   - Responsive design (mobile/tablet/desktop)
+   - Empty search results handling
+   - Performance timing
+
+#### Troubleshooting Common Issues
+1. **"Failed to connect to Chrome debugging port 9222"**:
+   - Ensure browser was started with `--remote-debugging-port=9222` flag
+   - Check if port 9222 is accessible: `curl -s http://localhost:9222/json`
+   - Kill and restart browser with correct flags
+
+2. **"Navigation failed: Attempted to use detached Frame"**:
+   - Restart browser and reconnect
+   - Ensure target URL is accessible: `curl -I http://localhost:3000`
+
+3. **Application not responding**:
+   - Check if frontend/backend are running: `curl -I http://localhost:3000` and `curl -I http://localhost:3001/api/recipes`
+   - Restart application: `npm run dev`
+
+4. **Browser won't start**:
+   - Verify browser installation: `which chromium-browser` or `which google-chrome`
+   - Install if missing (see Prerequisites section)
+
+#### Best Practices for Validation
+1. **Systematic screenshot naming**: Use descriptive, numbered names (e.g., `01_initial_load`, `02_search_results`, `03_mobile_responsive`)
+2. **Test critical user journeys**: Focus on main user workflows end-to-end
+3. **Document edge cases**: Test and screenshot error states, empty results, etc.
+4. **Responsive testing**: Always test mobile viewport (375x667) and desktop (1280x720)
+5. **Performance validation**: Note load times and interaction responsiveness
+6. **Cross-browser consideration**: Document which browser was used for testing
