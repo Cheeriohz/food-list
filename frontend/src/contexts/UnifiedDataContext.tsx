@@ -165,6 +165,7 @@ interface UnifiedDataProviderProps {
 }
 
 export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ children }) => {
+  console.log('🚀 UnifiedDataProvider: Component rendering');
   const [state, dispatch] = useReducer(unifiedDataReducer, initialState);
   
   // Services
@@ -190,10 +191,12 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
 
   // Load initial data
   const loadData = useCallback(async () => {
+    console.log('📥 UnifiedDataContext: loadData called');
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
       // Fetch recipes and tags from existing API
+      console.log('📥 Fetching recipes and tags from API');
       const [recipesResponse, tagsResponse] = await Promise.all([
         fetch('/api/recipes'),
         fetch('/api/tags')
@@ -206,12 +209,19 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
       const recipes: Recipe[] = await recipesResponse.json();
       const tags: Tag[] = await tagsResponse.json();
       
+      console.log('📥 Fetched data - Recipes:', recipes.length, 'Tags:', tags.length);
+      console.log('📥 Sample recipe:', recipes[0]);
+      console.log('📥 Sample tag:', tags[0]);
+      
       dispatch({ type: 'SET_DATA', payload: { recipes, tags } });
       
       // Initialize services with data
+      console.log('📥 Initializing services with data');
       await initializeServices(recipes, tags);
+      console.log('📥 Services initialized successfully');
       
     } catch (error) {
+      console.error('📥 Error loading data:', error);
       dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
     }
   }, [initializeServices]);
@@ -342,6 +352,50 @@ export const UnifiedDataProvider: React.FC<UnifiedDataProviderProps> = ({ childr
   const refreshData = useCallback(async () => {
     await loadData();
   }, [loadData]);
+
+  // Load data on mount - using useEffect with proper dependencies
+  useEffect(() => {
+    console.log('📥 UnifiedDataContext: useEffect triggered, calling loadData');
+    
+    const initializeData = async () => {
+      console.log('📥 Starting data initialization...');
+      
+      try {
+        // Fetch data directly in useEffect to avoid dependency issues
+        const [recipesResponse, tagsResponse] = await Promise.all([
+          fetch('/api/recipes'),
+          fetch('/api/tags')
+        ]);
+        
+        if (!recipesResponse.ok || !tagsResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        
+        const recipes: Recipe[] = await recipesResponse.json();
+        const tags: Tag[] = await tagsResponse.json();
+        
+        console.log('📥 Direct fetch - Recipes:', recipes.length, 'Tags:', tags.length);
+        
+        // Set the data in state
+        dispatch({ type: 'SET_DATA', payload: { recipes, tags } });
+        
+        // Initialize services
+        dispatch({ type: 'SET_INDEXING', payload: true });
+        
+        treeService.initialize(recipes, tags);
+        await searchService.buildIndex(recipes, tags);
+        
+        dispatch({ type: 'SET_INDEXING', payload: false });
+        console.log('📥 Data initialization completed successfully');
+        
+      } catch (error) {
+        console.error('📥 Error in data initialization:', error);
+        dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
+      }
+    };
+    
+    initializeData();
+  }, [searchService, treeService]); // Include service dependencies
 
   const loadRecipeDetails = useCallback(async (recipeId: number): Promise<Recipe | null> => {
     try {

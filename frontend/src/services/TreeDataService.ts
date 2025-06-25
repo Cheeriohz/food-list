@@ -210,35 +210,61 @@ class TreeDataService {
    * Build data maps for efficient lookups
    */
   private buildDataMaps(recipes: Recipe[], tags: Tag[]): void {
+    console.log('🔧 TreeDataService: buildDataMaps called');
+    console.log('🔧 Input recipes:', recipes.length);
+    console.log('🔧 Input tags:', tags.length);
+
     // Build tag map
     tags.forEach(tag => {
       if (tag.id) {
         this.tagMap.set(tag.id, tag);
+        console.log('🔧 Added tag:', tag.id, tag.name);
       }
     });
+    console.log('🔧 Tag map size:', this.tagMap.size);
 
     // Build recipe map and tag associations
     recipes.forEach(recipe => {
       if (recipe.id) {
         this.recipeMap.set(recipe.id, recipe);
+        console.log('🔧 Processing recipe:', recipe.id, recipe.title);
+        console.log('🔧 Recipe tags:', recipe.tags);
         
         // Build recipe -> tags mapping
         const tagIds = new Set<number>();
         recipe.tags?.forEach(tag => {
+          console.log('🔧 Processing recipe tag:', tag);
           if (tag.id) {
             tagIds.add(tag.id);
+            console.log('🔧 Added tag ID', tag.id, 'to recipe', recipe.id);
             
             // Build tag -> recipes mapping
             if (!this.tagRecipeMap.has(tag.id)) {
               this.tagRecipeMap.set(tag.id, new Set());
             }
             this.tagRecipeMap.get(tag.id)!.add(recipe.id!);
+            console.log('🔧 Added recipe', recipe.id, 'to tag', tag.id);
+          } else {
+            console.log('🔧 WARNING: Tag missing ID:', tag);
           }
         });
         
         this.recipeTagMap.set(recipe.id, tagIds);
+        console.log('🔧 Recipe', recipe.id, 'associated with tags:', Array.from(tagIds));
       }
     });
+
+    console.log('🔧 Final map sizes:');
+    console.log('🔧 - recipeMap:', this.recipeMap.size);
+    console.log('🔧 - tagMap:', this.tagMap.size);
+    console.log('🔧 - tagRecipeMap:', this.tagRecipeMap.size);
+    console.log('🔧 - recipeTagMap:', this.recipeTagMap.size);
+    
+    // Log some sample mappings
+    console.log('🔧 Sample tagRecipeMap entries:');
+    for (const [tagId, recipeIds] of this.tagRecipeMap) {
+      console.log(`🔧   Tag ${tagId} -> Recipes [${Array.from(recipeIds).join(', ')}]`);
+    }
   }
 
   /**
