@@ -483,6 +483,81 @@ app.put('/api/recipes/:id/tags', (req: any, res: any) => {
   });
 });
 
+// Levenshtein distance for fuzzy matching
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+  
+  for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= b.length; j++) {
+    for (let i = 1; i <= a.length; i++) {
+      const substitutionCost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1, // deletion
+        matrix[j - 1][i] + 1, // insertion
+        matrix[j - 1][i - 1] + substitutionCost // substitution
+      );
+    }
+  }
+  
+  return matrix[b.length][a.length];
+}
+
+// Calculate fuzzy match score (0-1, higher is better)
+function fuzzyMatchScore(query: string, text: string): number {
+  const queryLower = query.toLowerCase();
+  const textLower = text.toLowerCase();
+  
+  // Exact match gets highest score
+  if (textLower.includes(queryLower)) {
+    return 1.0;
+  }
+  
+  // Split into words for better matching
+  const queryWords = queryLower.split(/\s+/);
+  const textWords = textLower.split(/\s+/);
+  
+  let bestScore = 0;
+  
+  for (const queryWord of queryWords) {
+    if (queryWord.length < 2) continue;
+    
+    for (const textWord of textWords) {
+      if (textWord.length < 2) continue;
+      
+      // Prefix matching (high score)
+      if (textWord.startsWith(queryWord)) {
+        bestScore = Math.max(bestScore, 0.9);
+        continue;
+      }
+      
+      // Fuzzy matching with Levenshtein distance
+      const maxLength = Math.max(queryWord.length, textWord.length);
+      const distance = levenshteinDistance(queryWord, textWord);
+      
+      // Calculate similarity score
+      let similarity = 1 - (distance / maxLength);
+      
+      // Apply stricter thresholds based on word length
+      if (queryWord.length <= 3) {
+        // Short words need exact or prefix match
+        similarity = textWord.startsWith(queryWord) ? 0.8 : 0;
+      } else if (queryWord.length <= 6) {
+        // Medium words allow 1 character difference
+        similarity = distance <= 1 ? similarity : 0;
+      } else {
+        // Long words allow 2 character difference
+        similarity = distance <= 2 ? similarity : 0;
+      }
+      
+      bestScore = Math.max(bestScore, similarity);
+    }
+  }
+  
+  return bestScore;
+}
+
 app.get('/api/search', (req: Request<{}, {}, {}, SearchParams>, res: Response) => {
   const { q, tags } = req.query;
   let query = `
@@ -495,13 +570,23 @@ app.get('/api/search', (req: Request<{}, {}, {}, SearchParams>, res: Response) =
   const conditions: string[] = [];
   const params: string[] = [];
   
-  if (q) {
-    conditions.push('(r.title LIKE ? OR r.description LIKE ? OR r.ingredients LIKE ? OR r.instructions LIKE ?)');
-    const searchTerm = `%${q}%`;
-    params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-  }
-  
-  if (tags) {
+  // For text search, we'll get all recipes and do fuzzy matching in memory
+  // This is acceptable for smaller datasets and provides better control
+  if (q && tags) {
+    // Both text and tag filters
+    const tagList = tags.split(',').map(tag => tag.trim());
+    const tagPlaceholders = tagList.map(() => '?').join(',');
+    conditions.push(`r.id IN (
+      SELECT rt2.recipe_id 
+      FROM recipe_tags rt2 
+      JOIN tags t2 ON rt2.tag_id = t2.id 
+      WHERE t2.name IN (${tagPlaceholders})
+      GROUP BY rt2.recipe_id 
+      HAVING COUNT(DISTINCT t2.name) = ${tagList.length}
+    )`);
+    params.push(...tagList);
+  } else if (tags) {
+    // Only tag filters (exact matching for tags)
     const tagList = tags.split(',').map(tag => tag.trim());
     const tagPlaceholders = tagList.map(() => '?').join(',');
     conditions.push(`r.id IN (
@@ -526,10 +611,40 @@ app.get('/api/search', (req: Request<{}, {}, {}, SearchParams>, res: Response) =
       return res.status(500).json({ error: err.message });
     }
     
-    const recipes: Recipe[] = rows.map(row => ({
+    let recipes: Recipe[] = rows.map(row => ({
       ...row,
       tags: row.tags ? row.tags.split(',') : []
     }));
+    
+    // Apply fuzzy text search if query provided
+    if (q) {
+      const MIN_SIMILARITY_SCORE = 0.6; // 60% minimum similarity
+      
+      interface RecipeWithScore extends Recipe {
+        _searchScore?: number;
+      }
+      
+      const recipesWithScores: RecipeWithScore[] = recipes.map(recipe => {
+        // Calculate fuzzy match scores for different fields with weights
+        const titleScore = fuzzyMatchScore(q, recipe.title) * 3.0;
+        const descriptionScore = fuzzyMatchScore(q, recipe.description || '') * 1.5;
+        const ingredientsScore = fuzzyMatchScore(q, recipe.ingredients) * 2.0;
+        const instructionsScore = fuzzyMatchScore(q, recipe.instructions) * 1.0;
+        
+        const maxScore = Math.max(titleScore, descriptionScore, ingredientsScore, instructionsScore);
+        
+        return {
+          ...recipe,
+          _searchScore: maxScore
+        };
+      }).filter(recipe => (recipe._searchScore || 0) >= MIN_SIMILARITY_SCORE);
+      
+      // Sort by relevance score (highest first)
+      recipesWithScores.sort((a, b) => (b._searchScore || 0) - (a._searchScore || 0));
+      
+      // Remove score property before returning
+      recipes = recipesWithScores.map(({ _searchScore, ...recipe }) => recipe);
+    }
     
     res.json(recipes);
   });

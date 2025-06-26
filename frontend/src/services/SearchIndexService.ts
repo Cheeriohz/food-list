@@ -107,18 +107,21 @@ class SearchIndexService {
     }
     
     const startTime = performance.now();
+    const MIN_SIMILARITY_SCORE = 0.6; // 60% minimum similarity threshold
     
     // Stage 1: Exact matches (fastest)
     const exactMatches = await this.exactMatchSearch(query);
+    const filteredExact = exactMatches.filter(result => result.score >= MIN_SIMILARITY_SCORE);
     
-    if (exactMatches.length >= maxResults) {
-      this.logSearchPerformance(query, performance.now() - startTime, exactMatches.length);
-      return exactMatches.slice(0, maxResults);
+    if (filteredExact.length >= maxResults) {
+      this.logSearchPerformance(query, performance.now() - startTime, filteredExact.length);
+      return filteredExact.slice(0, maxResults);
     }
     
     // Stage 2: Prefix matches
     const prefixMatches = await this.prefixMatchSearch(query);
-    const combined = this.mergeAndDeduplicateResults(exactMatches, prefixMatches);
+    const filteredPrefix = prefixMatches.filter(result => result.score >= MIN_SIMILARITY_SCORE);
+    const combined = this.mergeAndDeduplicateResults(filteredExact, filteredPrefix);
     
     if (combined.length >= maxResults) {
       this.logSearchPerformance(query, performance.now() - startTime, combined.length);
@@ -127,7 +130,8 @@ class SearchIndexService {
     
     // Stage 3: Fuzzy matches (n-grams)
     const fuzzyMatches = await this.fuzzyMatchSearch(query);
-    const final = this.mergeAndDeduplicateResults(combined, fuzzyMatches);
+    const filteredFuzzy = fuzzyMatches.filter(result => result.score >= MIN_SIMILARITY_SCORE);
+    const final = this.mergeAndDeduplicateResults(combined, filteredFuzzy);
     
     const endTime = performance.now();
     this.logSearchPerformance(query, endTime - startTime, final.length);
