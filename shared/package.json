@@ -1,0 +1,17 @@
+{
+  "name": "@food-list/schemas",
+  "version": "1.0.0",
+  "description": "Shared schemas and types for the food-list application",
+  "main": "schemas/index.js",
+  "types": "schemas/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

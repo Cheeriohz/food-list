@@ -52,7 +52,13 @@
       "mcp__puppeteer__puppeteer_click",
       "mcp__puppeteer__puppeteer_fill",
       "mcp__puppeteer__puppeteer_evaluate",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm test)",
+      "Bash(sed:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm test:*)",
+      "Bash(ln:*)"
     ],
     "deny": []
   }

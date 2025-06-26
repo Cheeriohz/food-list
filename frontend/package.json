@@ -4,15 +4,22 @@
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "zod": "^3.25.67"
   },
   "scripts": {
     "dev": "npx vite",
     "start": "npx vite",
     "build": "npx vite build",
     "preview": "npx vite preview",
-    "start:simple": "python3 -m http.server 3000 --directory public",
-    "start:node": "node -e \"const http=require('http'),fs=require('fs'),path=require('path');http.createServer((req,res)=>{const file=req.url==='/'?'/simple.html':req.url;const filePath=path.join(__dirname,'public',file);fs.readFile(filePath,(err,data)=>{if(err){res.writeHead(404);res.end('Not found');return;}const ext=path.extname(file);const contentType={'html':'text/html','js':'text/javascript','css':'text/css'}[ext.slice(1)]||'text/plain';res.writeHead(200,{'Content-Type':contentType,'Access-Control-Allow-Origin':'*'});res.end(data);})}).listen(3000,()=>console.log('Simple server running on http://localhost:3000'));\""
+    "start:node": "node -e \"const http=require('http'),fs=require('fs'),path=require('path');http.createServer((req,res)=>{const file=req.url==='/'?'/simple.html':req.url;const filePath=path.join(__dirname,'public',file);fs.readFile(filePath,(err,data)=>{if(err){res.writeHead(404);res.end('Not found');return;}const ext=path.extname(file);const contentType={'html':'text/html','js':'text/javascript','css':'text/css'}[ext.slice(1)]||'text/plain';res.writeHead(200,{'Content-Type':contentType,'Access-Control-Allow-Origin':'*'});res.end(data);})}).listen(3000,()=>console.log('Simple server running on http://localhost:3000'));\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src/**/*.{ts,tsx}",
+    "typecheck": "tsc --noEmit"
   },
   "eslintConfig": {
     "extends": [
@@ -34,11 +41,24 @@
   },
   "proxy": "http://localhost:3001",
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.35.0",
+    "@typescript-eslint/parser": "^8.35.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.1",
     "typescript": "^5.8.3",
     "vite": "^5.1.0",
-    "vite-tsconfig-paths": "^4.3.1"
+    "vite-tsconfig-paths": "^4.3.1",
+    "vitest": "^3.2.4"
   }
 }
