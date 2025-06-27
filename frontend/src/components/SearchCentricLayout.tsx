@@ -6,6 +6,7 @@ import RecipeGrid from './RecipeGrid';
 import RecipeDetail from './RecipeDetail';
 import EmptySearchState from './EmptySearchState';
 import AdvancedSearchFilters, { SearchFilters } from './AdvancedSearchFilters';
+import ThemeToggle from './ThemeToggle';
 
 interface SearchCentricLayoutProps {
   children?: React.ReactNode;
@@ -144,6 +145,10 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
           <h1 className="app-title">
             🍳 Recipe Manager
           </h1>
+          
+          <div className="header-actions">
+            <ThemeToggle />
+          </div>
           
           <div className="search-container">
             <UnifiedSearchBar

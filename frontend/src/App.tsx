@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { UnifiedStateProvider, useUnifiedState } from './state/unified-state-context';
+import { ThemeProvider } from './contexts/ThemeContext';
 import SearchCentricLayout from './components/SearchCentricLayout';
 import RecipeDetail from './components/RecipeDetail';
 import RecipeForm from './components/RecipeForm';
@@ -61,9 +62,11 @@ function AppContent() {
 
 function App() {
   return (
-    <UnifiedStateProvider>
-      <AppContent />
-    </UnifiedStateProvider>
+    <ThemeProvider>
+      <UnifiedStateProvider>
+        <AppContent />
+      </UnifiedStateProvider>
+    </ThemeProvider>
   );
 }
 
