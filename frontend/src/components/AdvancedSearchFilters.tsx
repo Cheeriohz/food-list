@@ -1,17 +1,19 @@
-import React, { useState, useCallback } from 'react';
-import { Recipe, Tag } from '../types';
+import { useState, useCallback } from 'react';
+import { Tag } from '../types';
+import { 
+  SearchFilters, 
+  hasActiveFilters, 
+  resetFilters, 
+  toggleFilterTag,
+  updateTimeRange,
+  updateServingsRange,
+  updateSortBy,
+  updateSortOrder,
+  updateDescriptionFilter,
+  updateIngredientLimits 
+} from '../utils/searchFilterUtils';
 
-export interface SearchFilters {
-  tags: string[];
-  prepTimeRange: [number, number];
-  cookTimeRange: [number, number];
-  servingsRange: [number, number];
-  sortBy: 'relevance' | 'title' | 'prep_time' | 'cook_time' | 'total_time' | 'servings' | 'created_at';
-  sortOrder: 'asc' | 'desc';
-  hasDescription: boolean | null;
-  minIngredients: number | null;
-  maxIngredients: number | null;
-}
+export type { SearchFilters };
 
 interface AdvancedSearchFiltersProps {
   filters: SearchFilters;
@@ -106,14 +108,7 @@ const AdvancedSearchFilters: React.FC<AdvancedSearchFiltersProps> = ({
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
           </svg>
           Advanced Filters
-          {(filters.tags.length > 0 || 
-            filters.prepTimeRange[0] > 0 || filters.prepTimeRange[1] < 180 ||
-            filters.cookTimeRange[0] > 0 || filters.cookTimeRange[1] < 240 ||
-            filters.servingsRange[0] > 1 || filters.servingsRange[1] < 12 ||
-            filters.sortBy !== 'relevance' ||
-            filters.hasDescription !== null ||
-            filters.minIngredients !== null ||
-            filters.maxIngredients !== null) && (
+          {hasActiveFilters(filters) && (
             <span className="active-indicator">
               <svg width="8" height="8" viewBox="0 0 8 8">
                 <circle cx="4" cy="4" r="4" fill="#ff6b6b"/>

@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
-import { RecipeProvider, useRecipes } from './contexts/RecipeContext';
-import { TagProvider } from './contexts/TagContext';
-import { UnifiedDataProvider } from './contexts/UnifiedDataContext';
+import { useState } from 'react';
+import { UnifiedStateProvider, useUnifiedState } from './state/unified-state-context';
 import SearchCentricLayout from './components/SearchCentricLayout';
-import RecipeList from './components/RecipeList';
 import RecipeDetail from './components/RecipeDetail';
 import RecipeForm from './components/RecipeForm';
 import TagManagement from './components/TagManagement';
@@ -11,14 +8,10 @@ import TagManagement from './components/TagManagement';
 type ViewMode = 'list' | 'detail' | 'create' | 'manage-tags';
 
 function AppContent() {
-  const { fetchRecipes } = useRecipes();
+  const { loadRecipes } = useUnifiedState();
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
-  const handleRecipeClick = (recipeId: number): void => {
-    setSelectedRecipeId(recipeId);
-    setViewMode('detail');
-  };
 
   const handleBackToList = (): void => {
     setSelectedRecipeId(null);
@@ -59,7 +52,7 @@ function AppContent() {
       ) : viewMode === 'manage-tags' ? (
         <TagManagement
           onBack={handleBackToList}
-          onTagsChanged={fetchRecipes}
+          onTagsChanged={loadRecipes}
         />
       ) : null}
     </SearchCentricLayout>
@@ -68,13 +61,9 @@ function AppContent() {
 
 function App() {
   return (
-    <RecipeProvider>
-      <TagProvider>
-        <UnifiedDataProvider>
-          <AppContent />
-        </UnifiedDataProvider>
-      </TagProvider>
-    </RecipeProvider>
+    <UnifiedStateProvider>
+      <AppContent />
+    </UnifiedStateProvider>
   );
 }
 
