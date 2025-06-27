@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useUnifiedData } from '../contexts/UnifiedDataContext';
+import { useUnifiedState } from '../state/unified-state-context';
 
 interface SearchSuggestion {
   text: string;
@@ -33,7 +33,7 @@ const UnifiedSearchBar: React.FC<UnifiedSearchBarProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const { getSuggestions } = useUnifiedData();
+  const { getSuggestions } = useUnifiedState();
 
   // Focus input when autoFocus changes
   useEffect(() => {

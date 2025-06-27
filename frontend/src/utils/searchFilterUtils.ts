@@ -42,7 +42,7 @@ export const hasActiveFilters = (filters: SearchFilters): boolean => {
 };
 
 // Pure function to reset filters to default values
-export const resetFilters = (currentFilters: SearchFilters): SearchFilters => {
+export const resetFilters = (): SearchFilters => {
   return { ...DEFAULT_FILTERS };
 };
 

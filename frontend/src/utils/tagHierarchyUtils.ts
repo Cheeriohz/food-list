@@ -69,15 +69,19 @@ export const buildTagHierarchy = (
   // Create a map of tag ID to hierarchical tag
   const tagMap = new Map<number, HierarchicalTag>();
   
-  // Initialize all tags as hierarchical tags
+  // Initialize all tags as hierarchical tags (filter out tags without IDs)
   for (const tag of flatTags) {
-    tagMap.set(tag.id, { ...tag, children: [] });
+    if (tag.id !== undefined) {
+      tagMap.set(tag.id, { ...tag, children: [] });
+    }
   }
   
   const rootTags: HierarchicalTag[] = [];
   
   // Build the hierarchy
   for (const tag of flatTags) {
+    if (tag.id === undefined) continue;
+    
     const hierarchicalTag = tagMap.get(tag.id)!;
     const parentId = parentRelationships.get(tag.id);
     

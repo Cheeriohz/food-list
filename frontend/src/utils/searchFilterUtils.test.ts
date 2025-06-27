@@ -52,7 +52,7 @@ describe('Search Filter Utils', () => {
 
     it('should return true when sort order is changed', () => {
       const filters = getDefaultFilters({
-        sortBy: 'newest'
+        sortBy: 'created_at'
       });
       
       expect(hasActiveFilters(filters)).toBe(true);
@@ -78,7 +78,7 @@ describe('Search Filter Utils', () => {
       const filters = getDefaultFilters({
         tags: ['vegetarian', 'quick'],
         prepTimeRange: [5, 30],
-        sortBy: 'newest'
+        sortBy: 'created_at'
       });
       
       expect(hasActiveFilters(filters)).toBe(true);
@@ -92,20 +92,20 @@ describe('Search Filter Utils', () => {
         prepTimeRange: [10, 60],
         cookTimeRange: [15, 120],
         servingsRange: [2, 6],
-        sortBy: 'newest',
+        sortBy: 'created_at',
         hasDescription: true,
         minIngredients: 3,
         maxIngredients: 10
       });
 
-      const result = resetFilters(activeFilters);
+      const result = resetFilters();
 
       expect(result).toEqual(getDefaultFilters());
     });
 
     it('should return new object (immutable)', () => {
       const originalFilters = getDefaultFilters({ tags: ['vegetarian'] });
-      const result = resetFilters(originalFilters);
+      const result = resetFilters();
 
       expect(result).not.toBe(originalFilters);
       expect(originalFilters.tags).toEqual(['vegetarian']); // Original unchanged

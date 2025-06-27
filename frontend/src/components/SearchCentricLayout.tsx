@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useUnifiedData } from '../contexts/UnifiedDataContext';
+import { useUnifiedState } from '../state/unified-state-context';
 import { Recipe } from '../types';
 import UnifiedSearchBar from './UnifiedSearchBar';
 import RecipeGrid from './RecipeGrid';
 import RecipeDetail from './RecipeDetail';
 import EmptySearchState from './EmptySearchState';
 import AdvancedSearchFilters, { SearchFilters } from './AdvancedSearchFilters';
-import { useTags } from '../contexts/TagContext';
 
 interface SearchCentricLayoutProps {
   children?: React.ReactNode;
@@ -20,6 +19,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
     searchQuery,
     searchResults,
     recipes,
+    tags,
     showResults,
     loading,
     indexing,
@@ -30,7 +30,7 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
     clearSearch,
     selectRecipe,
     showRecipeDetailView
-  } = useUnifiedData();
+  } = useUnifiedState();
 
   const [searchFocused, setSearchFocused] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -47,7 +47,6 @@ const SearchCentricLayout: React.FC<SearchCentricLayoutProps> = ({ children, onC
     maxIngredients: null
   });
 
-  const { tags } = useTags();
 
   // Show results when there's a query, search is focused, or browse mode is active
   const shouldShowResults = showResults || searchQuery.length > 0 || searchFocused || browseMode;
