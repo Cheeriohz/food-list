@@ -1,8 +1,8 @@
 /* CSS Custom Properties for Theme System */
 :root {
   /* Primary Brand Colors */
-  --color-primary: #3498db;
-  --color-primary-hover: #2980b9;
+  --color-primary: #1f5f8b;           /* Even darker blue to achieve 4.5:1 contrast ratio */
+  --color-primary-hover: #164463;
   --color-primary-light: #85c1e9;
   --color-primary-alpha-10: rgba(52, 152, 219, 0.1);
   --color-primary-alpha-20: rgba(52, 152, 219, 0.2);
@@ -23,23 +23,28 @@
   /* Text System */
   --color-text: #2c3e50;
   --color-text-secondary: #666666;
-  --color-text-muted: #888888;
+  --color-text-muted: #5a5a5a;        /* Improved contrast for WCAG AA compliance */
   --color-text-inverse: #ffffff;
   
   /* Border System */
-  --color-border: #ddd;
-  --color-border-hover: #d1d5da;
+  --color-border: #bbb;              /* Improved contrast for UI components */
+  --color-border-hover: #999;
   --color-border-focus: #0366d6;
+  
+  /* Interactive States */
+  --color-disabled-bg: #f8f9fa;
+  --color-disabled-text: #a0a0a0;
+  --color-disabled-border: #e1e4e8;
   
   /* Specific Component Colors */
   --color-header-bg: #2c3e50;
   --color-header-text: #ffffff;
-  --color-tag-bg: #3498db;
+  --color-tag-bg: #1f5f8b;
   --color-tag-text: #ffffff;
   --color-back-button: #95a5a6;
   --color-back-button-hover: #7f8c8d;
   --color-ingredients-bg: #f8f9fa;
-  --color-ingredients-border: #3498db;
+  --color-ingredients-border: #1f5f8b;
   
   /* Comparison Colors */
   --color-comparison-active: #9c27b0;
@@ -84,24 +89,29 @@
   --color-surface-hover: #2d2d2d;
   --color-surface-active: #404040;
   
-  /* Text System */
-  --color-text: #e0e0e0;
-  --color-text-secondary: #b0b0b0;
-  --color-text-muted: #808080;
-  --color-text-inverse: #000000;
+  /* Text System - Optimized for WCAG AA contrast ratios */
+  --color-text: #f0f0f0;             /* Higher contrast on dark backgrounds */
+  --color-text-secondary: #c0c0c0;   /* Improved contrast for secondary text */
+  --color-text-muted: #909090;       /* Better visibility while still muted */
+  --color-text-inverse: #121212;     /* Use dark background color instead of pure black */
   
-  /* Border System */
-  --color-border: #333333;
-  --color-border-hover: #404040;
+  /* Border System - Improved contrast for WCAG AA compliance */
+  --color-border: #555555;           /* Further improved contrast ratio for borders */
+  --color-border-hover: #666666;     /* Better hover state visibility */
   --color-border-focus: #5dade2;
   
-  /* Specific Component Colors */
+  /* Interactive States */
+  --color-disabled-bg: #2d2d2d;
+  --color-disabled-text: #707070;    /* Improved disabled text contrast */
+  --color-disabled-border: #555555;
+  
+  /* Specific Component Colors - Enhanced for accessibility */
   --color-header-bg: #1a1a1a;
-  --color-header-text: #e0e0e0;
+  --color-header-text: #f0f0f0;      /* Improved header text contrast */
   --color-tag-bg: #5dade2;
-  --color-tag-text: #000000;
+  --color-tag-text: #121212;         /* Better contrast on light blue background */
   --color-back-button: #757575;
-  --color-back-button-hover: #616161;
+  --color-back-button-hover: #8a8a8a; /* Lighter hover state for better visibility */
   --color-ingredients-bg: #2d2d2d;
   --color-ingredients-border: #5dade2;
   
@@ -200,6 +210,17 @@ code {
   font-size: 1rem;
   background: var(--color-surface);
   color: var(--color-text);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha-10);
+}
+
+.search-bar input:hover:not(:focus) {
+  border-color: var(--color-border-hover);
 }
 
 .recipe-grid {
@@ -395,4 +416,60 @@ code {
 
 .control-button.comparison-count:not(:disabled):hover {
   background: var(--color-comparison-count-alpha-20);
+}
+
+/* General button and form styling */
+button:not([class]) {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+button:not([class]):hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+button:not([class]):focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha-10);
+}
+
+button:not([class]):disabled {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  border-color: var(--color-disabled-border);
+  cursor: not-allowed;
+}
+
+/* General input styling */
+input:not([class]), textarea:not([class]), select:not([class]) {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+input:not([class]):focus, textarea:not([class]):focus, select:not([class]):focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha-10);
+}
+
+input:not([class]):hover:not(:focus), textarea:not([class]):hover:not(:focus), select:not([class]):hover:not(:focus) {
+  border-color: var(--color-border-hover);
+}
+
+input:not([class]):disabled, textarea:not([class]):disabled, select:not([class]):disabled {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  border-color: var(--color-disabled-border);
+  cursor: not-allowed;
 }
