@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Tag } from '../types';
+import { getAllTagNames } from '../utils/tagHierarchyUtils';
+import { toggleSetItem } from '../utils/immutableSetUtils';
 
 interface TagHierarchyBrowserProps {
   tags: Tag[];
@@ -156,32 +158,10 @@ const TagHierarchyBrowser: React.FC<TagHierarchyBrowserProps> = ({
   );
 
   const handleToggleExpanded = (tagName: string) => {
-    setExpandedNodes(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(tagName)) {
-        newSet.delete(tagName);
-      } else {
-        newSet.add(tagName);
-      }
-      return newSet;
-    });
+    setExpandedNodes(prev => toggleSetItem(prev, tagName));
   };
 
   const expandAll = () => {
-    const getAllTagNames = (tagList: Tag[]): string[] => {
-      let names: string[] = [];
-      const traverse = (tags: Tag[]) => {
-        for (const tag of tags) {
-          names.push(tag.name);
-          if (tag.children) {
-            traverse(tag.children);
-          }
-        }
-      };
-      traverse(tagList);
-      return names;
-    };
-    
     setExpandedNodes(new Set(getAllTagNames(tags)));
   };
 

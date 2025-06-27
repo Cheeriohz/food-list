@@ -1,5 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Recipe } from '../types';
+import {
+  calculateComplexityScore,
+  getMetricComparison,
+  classifyMetricValue,
+  getMetricValue,
+  formatMetricValue,
+  getMetricConfig,
+  toggleArrayItem
+} from '../utils/recipeComparisonUtils';
 
 interface RecipeComparisonProps {
   recipes: Recipe[];
@@ -7,12 +16,6 @@ interface RecipeComparisonProps {
   onRemoveRecipe: (recipeId: string | number) => void;
 }
 
-interface ComparisonMetric {
-  label: string;
-  getValue: (recipe: Recipe) => string | number | undefined;
-  formatValue?: (value: any) => string;
-  isNumeric?: boolean;
-}
 
 const RecipeComparison: React.FC<RecipeComparisonProps> = ({
   recipes,
@@ -27,105 +30,29 @@ const RecipeComparison: React.FC<RecipeComparisonProps> = ({
     'tags'
   ]);
 
-  const comparisonMetrics: { [key: string]: ComparisonMetric } = {
-    prep_time: {
-      label: 'Prep Time',
-      getValue: (recipe) => recipe.prep_time,
-      formatValue: (value) => value ? `${value} min` : 'Not specified',
-      isNumeric: true
-    },
-    cook_time: {
-      label: 'Cook Time',
-      getValue: (recipe) => recipe.cook_time,
-      formatValue: (value) => value ? `${value} min` : 'Not specified',
-      isNumeric: true
-    },
-    total_time: {
-      label: 'Total Time',
-      getValue: (recipe) => {
-        const prep = recipe.prep_time || 0;
-        const cook = recipe.cook_time || 0;
-        return prep + cook;
-      },
-      formatValue: (value) => value ? `${value} min` : 'Not specified',
-      isNumeric: true
-    },
-    servings: {
-      label: 'Servings',
-      getValue: (recipe) => recipe.servings,
-      formatValue: (value) => value ? `${value}` : 'Not specified',
-      isNumeric: true
-    },
-    ingredients_count: {
-      label: 'Ingredients Count',
-      getValue: (recipe) => {
-        if (!recipe.ingredients) return 0;
-        return recipe.ingredients.split('\n').filter(i => i.trim()).length;
-      },
-      formatValue: (value) => `${value} ingredients`,
-      isNumeric: true
-    },
-    instructions_count: {
-      label: 'Steps Count',
-      getValue: (recipe) => {
-        if (!recipe.instructions) return 0;
-        return recipe.instructions.split('\n').filter(i => i.trim()).length;
-      },
-      formatValue: (value) => `${value} steps`,
-      isNumeric: true
-    },
-    tags: {
-      label: 'Tags',
-      getValue: (recipe) => recipe.tags?.map(tag => tag.name).join(', ') || 'None',
-      formatValue: (value) => value || 'None'
-    },
-    created_at: {
-      label: 'Created',
-      getValue: (recipe) => recipe.created_at,
-      formatValue: (value) => value ? new Date(value).toLocaleDateString() : 'Unknown'
-    }
-  };
+  const metricConfig = getMetricConfig();
 
   const handleMetricToggle = useCallback((metricKey: string) => {
-    setSelectedMetrics(prev => 
-      prev.includes(metricKey)
-        ? prev.filter(key => key !== metricKey)
-        : [...prev, metricKey]
-    );
+    setSelectedMetrics(prev => toggleArrayItem(prev, metricKey));
   }, []);
 
-  const getMetricComparison = useCallback((metricKey: string) => {
-    const metric = comparisonMetrics[metricKey];
-    if (!metric.isNumeric) return null;
-
-    const values = recipes
-      .map(recipe => metric.getValue(recipe))
-      .filter(value => value !== undefined && value !== null)
-      .map(value => Number(value));
-
-    if (values.length === 0) return null;
-
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
-
-    return { min, max, avg };
-  }, [recipes, comparisonMetrics]);
+  const getMetricStats = useCallback((metricKey: string) => {
+    return getMetricComparison(recipes, metricKey);
+  }, [recipes]);
 
   const renderMetricCell = useCallback((recipe: Recipe, metricKey: string) => {
-    const metric = comparisonMetrics[metricKey];
-    const value = metric.getValue(recipe);
-    const formattedValue = metric.formatValue ? metric.formatValue(value) : String(value);
+    const value = getMetricValue(recipe, metricKey);
+    const formattedValue = formatMetricValue(value, metricKey);
     
     let className = 'metric-cell';
     
     // Add highlighting for numeric values
-    if (metric.isNumeric && value !== undefined && value !== null) {
-      const comparison = getMetricComparison(metricKey);
-      if (comparison) {
-        const numValue = Number(value);
-        if (numValue === comparison.min) className += ' best-value';
-        else if (numValue === comparison.max) className += ' worst-value';
+    if (metricConfig[metricKey]?.isNumeric && value !== undefined && value !== null) {
+      const stats = getMetricStats(metricKey);
+      if (stats) {
+        const classification = classifyMetricValue(value, stats);
+        if (classification === 'best') className += ' best-value';
+        else if (classification === 'worst') className += ' worst-value';
       }
     }
 
@@ -134,43 +61,15 @@ const RecipeComparison: React.FC<RecipeComparisonProps> = ({
         {formattedValue}
       </td>
     );
-  }, [comparisonMetrics, getMetricComparison]);
+  }, [metricConfig, getMetricStats]);
 
-  const renderNutritionalScore = useCallback((recipe: Recipe) => {
-    // Simple scoring based on preparation complexity and time
-    const prepTime = recipe.prep_time || 0;
-    const cookTime = recipe.cook_time || 0;
-    const totalTime = prepTime + cookTime;
-    
-    const ingredientsCount = recipe.ingredients 
-      ? recipe.ingredients.split('\n').filter(i => i.trim()).length 
-      : 0;
-    
-    const stepsCount = recipe.instructions
-      ? recipe.instructions.split('\n').filter(i => i.trim()).length
-      : 0;
-
-    // Simple complexity score (lower is simpler)
-    const complexityScore = (totalTime * 0.1) + (ingredientsCount * 2) + (stepsCount * 1.5);
-    
-    let rating: string;
-    let color: string;
-    
-    if (complexityScore < 20) {
-      rating = 'Simple';
-      color = '#4caf50';
-    } else if (complexityScore < 40) {
-      rating = 'Moderate';
-      color = '#ff9800';
-    } else {
-      rating = 'Complex';
-      color = '#f44336';
-    }
+  const renderComplexityScore = useCallback((recipe: Recipe) => {
+    const { score, level, color } = calculateComplexityScore(recipe);
 
     return (
       <div className="complexity-score" style={{ color }}>
-        <div className="score-label">{rating}</div>
-        <div className="score-value">{Math.round(complexityScore)}</div>
+        <div className="score-label">{level}</div>
+        <div className="score-value">{Math.round(score)}</div>
       </div>
     );
   }, []);
@@ -193,7 +92,7 @@ const RecipeComparison: React.FC<RecipeComparisonProps> = ({
           <div className="metrics-selector">
             <h3>Compare By:</h3>
             <div className="metrics-grid">
-              {Object.entries(comparisonMetrics).map(([key, metric]) => (
+              {Object.entries(metricConfig).map(([key, metric]) => (
                 <label key={key} className="metric-checkbox">
                   <input
                     type="checkbox"
@@ -214,14 +113,14 @@ const RecipeComparison: React.FC<RecipeComparisonProps> = ({
                 <th className="recipe-header">Recipe</th>
                 {selectedMetrics.map(metricKey => (
                   <th key={metricKey} className="metric-header">
-                    {comparisonMetrics[metricKey].label}
-                    {comparisonMetrics[metricKey].isNumeric && (
+                    {metricConfig[metricKey].label}
+                    {metricConfig[metricKey].isNumeric && (
                       <div className="metric-stats">
                         {(() => {
-                          const comparison = getMetricComparison(metricKey);
-                          return comparison ? (
+                          const stats = getMetricStats(metricKey);
+                          return stats ? (
                             <span className="stats-text">
-                              Min: {comparison.min} | Max: {comparison.max} | Avg: {Math.round(comparison.avg)}
+                              Min: {stats.min} | Max: {stats.max} | Avg: {Math.round(stats.avg)}
                             </span>
                           ) : null;
                         })()}
@@ -252,7 +151,7 @@ const RecipeComparison: React.FC<RecipeComparisonProps> = ({
                     renderMetricCell(recipe, metricKey)
                   )}
                   <td className="complexity-cell">
-                    {renderNutritionalScore(recipe)}
+                    {renderComplexityScore(recipe)}
                   </td>
                 </tr>
               ))}
