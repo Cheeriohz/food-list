@@ -33,6 +33,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run install-all` - Install dependencies for root, backend, and frontend
 - Or manually: `npm install && cd backend && npm install && cd ../frontend && npm install`
 
+## Dark Mode Feature
+
+The application includes a comprehensive dark mode implementation with the following features:
+
+### Theme System
+- **Light Mode**: Clean, bright interface with blue gradients and white surfaces
+- **Dark Mode**: Modern dark interface with adjusted colors and proper contrast ratios
+- **System Mode**: Automatically follows the user's operating system theme preference
+
+### Implementation Details
+- **Theme Context**: `frontend/src/contexts/ThemeContext.tsx` - React context managing theme state
+- **CSS Variables**: `frontend/src/index.css` - Complete variable system with WCAG AA compliance
+- **Theme Toggle**: Located in the header - accessible with keyboard and screen readers
+- **Persistence**: Theme choice is saved to localStorage and restored on page reload
+- **Transitions**: Smooth animations when switching themes (respects `prefers-reduced-motion`)
+
+### Components with Dark Mode Support
+- **SearchCentricLayout**: `frontend/src/components/SearchCentricLayout.css`
+- **EmptySearchState**: `frontend/src/components/EmptySearchState.css`
+- **ThemeToggle**: `frontend/src/components/ThemeToggle.tsx`
+
+### Development Tools
+When running in development mode, the following testing utilities are available in the browser console:
+- `window.manualThemeTests.runAllTests()` - Test theme functionality
+- `window.accessibilityValidator.runFullAccessibilityAudit()` - Validate WCAG compliance
+
+### Accessibility Features
+- **WCAG AA Compliant**: All color combinations meet or exceed 4.5:1 contrast ratio
+- **Keyboard Accessible**: Theme toggle fully keyboard navigable
+- **Screen Reader Friendly**: Proper ARIA labels and semantic markup
+- **Motion Respect**: Animations disabled for users who prefer reduced motion
+
 ## Architecture Overview
 
 This is a full-stack recipe management application with hierarchical tag organization:
@@ -42,6 +74,7 @@ This is a full-stack recipe management application with hierarchical tag organiz
 
 ### Frontend Architecture (`frontend/src/`)
 - **React 18 application** written in TypeScript with Context API for state management
+- **Dark Mode Support** - Full light/dark theme implementation with system detection
 
 # Development Guidelines for Claude
 
