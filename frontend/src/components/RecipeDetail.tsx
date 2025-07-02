@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useRecipes } from '../contexts/RecipeContext';
-import { useTags } from '../contexts/TagContext';
+import { useUnifiedState } from '../state/unified-state-context';
 import RecipeTagEditor from './RecipeTagEditor';
 import TagChip from './TagChip';
 
@@ -10,15 +9,25 @@ interface RecipeDetailProps {
 }
 
 const RecipeDetail = ({ recipeId, onBack }: RecipeDetailProps) => {
-  const { currentRecipe, fetchRecipe, loading, error, updateRecipeTags } = useRecipes();
-  const { tags } = useTags();
+  const { recipes, tags, selectedRecipeId, loading, error, updateRecipe } = useUnifiedState();
   const [isEditingTags, setIsEditingTags] = useState(false);
 
-  useEffect(() => {
-    if (recipeId) {
-      fetchRecipe(recipeId);
-    }
-  }, [recipeId, fetchRecipe]);
+  // Find the current recipe from the recipes array using selectedRecipeId
+  const currentRecipe = recipes.find(recipe => recipe.id === selectedRecipeId) || null;
+
+  // Custom updateRecipeTags function using updateRecipe
+  const updateRecipeTags = async (recipeId: number, tagIds: number[]) => {
+    if (!currentRecipe) return;
+    
+    // Create updated recipe with new tags
+    const updatedTags = tags.filter(tag => tagIds.includes(tag.id));
+    const updatedRecipe = {
+      ...currentRecipe,
+      tags: updatedTags
+    };
+    
+    await updateRecipe(recipeId, updatedRecipe);
+  };
 
   if (loading) return <div>Loading recipe...</div>;
   if (error) return <div>Error: {error}</div>;
