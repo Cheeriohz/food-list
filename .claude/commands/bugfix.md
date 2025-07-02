@@ -47,7 +47,39 @@ Create in the bug directory:
 - Confirm no new issues were introduced
 - Test both happy path and edge cases
 - Verify cross-component integration still works
+- **Perform runtime verification by starting application servers**
+- **Use Puppeteer tools for visual verification and automated testing**
+- **Capture screenshots showing before/after states**
+- **Test actual user workflows that were broken**
 - Document any deviations from expected results
+
+## Runtime Testing Requirements
+**CRITICAL**: Static analysis alone is insufficient. All UI bug fixes must include runtime verification:
+
+### Server Startup Verification
+- Start backend server: `cd backend && npm run dev`
+- Start frontend server: `cd frontend && npm start` 
+- Verify both servers are running and accessible
+- Check API endpoints are responding
+
+### Functional Testing
+- **Test the specific broken functionality** (e.g., recipe card clicks, form submissions)
+- **Verify error messages are eliminated** from browser console
+- **Test dependent functionality** (e.g., navigation, state updates)
+- **Test edge cases** mentioned in the original bug report
+
+### Visual Verification with Puppeteer
+- **Connect to running application**: Use `mcp__puppeteer__puppeteer_connect_active_tab`
+- **Navigate to relevant pages**: Use `mcp__puppeteer__puppeteer_navigate`
+- **Take before/after screenshots**: Use `mcp__puppeteer__puppeteer_screenshot`
+- **Automate user interactions**: Use `mcp__puppeteer__puppeteer_click`, `mcp__puppeteer__puppeteer_fill`
+- **Capture evidence**: Screenshot successful operations, error-free console output
+
+### Evidence Collection
+- **Screenshot comparisons**: Before fix (error state) vs After fix (working state)
+- **Console output**: Verify no React errors, warnings, or context errors
+- **Network activity**: Confirm API calls succeed
+- **Performance metrics**: Check for any performance regressions
 
 ## Quality Standards
 - Follow existing code patterns and conventions
@@ -67,6 +99,11 @@ Example usage: `/project:bugfix "recipe-card-context-error"`
 3. Create `bugfixes/{bug-name}/IMPLEMENTATION.md`
 4. Execute implementation steps sequentially
 5. Track progress in IMPLEMENTATION.md
-6. Run verification checklist
-7. Create `bugfixes/{bug-name}/VERIFICATION.md`
-8. Report completion status
+6. **Start application servers for runtime testing**
+7. **Perform Puppeteer-based visual verification**
+8. Run complete verification checklist (static + runtime)
+9. Create `bugfixes/{bug-name}/VERIFICATION.md` with evidence
+10. Report completion status with runtime test results
+
+## Critical Reminder
+**UI bug fixes without runtime verification are incomplete.** Always test the actual user workflow that was broken, capture visual evidence with Puppeteer, and verify the browser console shows no errors related to the fix.
