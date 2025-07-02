@@ -19,7 +19,7 @@ interface DbTagRow {
   parent_tag_id: number | null;
 }
 
-app.get('/api/recipes', (req: Request, res: Response) => {
+app.get('/api/recipes', (_req: Request, res: Response) => {
   const query = `
     SELECT r.*, 
            JSON_GROUP_ARRAY(
@@ -42,7 +42,7 @@ app.get('/api/recipes', (req: Request, res: Response) => {
       tags: row.tags ? JSON.parse(row.tags).filter((tag: any) => tag.id !== null) : []
     }));
     
-    res.json(recipes);
+    return res.json(recipes);
   });
 });
 
@@ -74,7 +74,7 @@ app.get('/api/recipes/:id', (req: Request, res: Response) => {
       tags: row.tags ? JSON.parse(row.tags).filter((tag: any) => tag.id !== null) : []
     };
     
-    res.json(recipe);
+    return res.json(recipe);
   });
 });
 
@@ -198,11 +198,11 @@ app.delete('/api/recipes/:id', (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Recipe not found' });
     }
     
-    res.json({ message: 'Recipe deleted successfully' });
+    return res.json({ message: 'Recipe deleted successfully' });
   });
 });
 
-app.get('/api/tags', (req: Request, res: Response) => {
+app.get('/api/tags', (_req: Request, res: Response) => {
   const query = `
     SELECT id, name, parent_tag_id
     FROM tags
@@ -224,7 +224,7 @@ app.get('/api/tags', (req: Request, res: Response) => {
     };
     
     const tagTree: Tag[] = buildTree(rows);
-    res.json(tagTree);
+    return res.json(tagTree);
   });
 });
 
@@ -646,7 +646,7 @@ app.get('/api/search', (req: Request<{}, {}, {}, SearchParams>, res: Response) =
       recipes = recipesWithScores.map(({ _searchScore, ...recipe }) => recipe);
     }
     
-    res.json(recipes);
+    return res.json(recipes);
   });
 });
 

@@ -95,7 +95,7 @@ const RecipeDetail = ({ recipeId, onBack }: RecipeDetailProps) => {
             recipe={currentRecipe}
             allTags={tags}
             onSave={async (tagIds: number[]) => {
-              await updateRecipeTags(currentRecipe.id!, tagIds);
+              await updateRecipeTags(currentRecipe.id, tagIds);
               setIsEditingTags(false);
             }}
             onCancel={() => setIsEditingTags(false)}

@@ -141,7 +141,7 @@ const RecipeComparison: React.FC<RecipeComparisonProps> = ({
                     )}
                     <button
                       className="remove-recipe"
-                      onClick={() => onRemoveRecipe(recipe.id!.toString())}
+                      onClick={() => recipe.id && onRemoveRecipe(recipe.id.toString())}
                       title="Remove from comparison"
                     >
                       Remove

@@ -9,7 +9,7 @@ interface RecipeCardProps {
 
 const RecipeCard = ({ recipe, onRecipeClick }: RecipeCardProps) => {
   return (
-    <div className="recipe-card" onClick={() => onRecipeClick(recipe.id!)}>
+    <div className="recipe-card" onClick={() => recipe.id && onRecipeClick(recipe.id)}>
       <h3>{recipe.title}</h3>
       <p>{recipe.description}</p>
       <div className="recipe-meta">

@@ -87,7 +87,7 @@ const RecipeTagEditor: React.FC<RecipeTagEditorProps> = ({
       
       // Add new change
       return [...filtered, {
-        tagId: tag.id!,
+        tagId: tag.id,
         action,
         tag
       }];
