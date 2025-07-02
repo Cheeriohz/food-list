@@ -60,7 +60,8 @@
       "Bash(npm test:*)",
       "Bash(ln:*)",
       "Bash(rg:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }
